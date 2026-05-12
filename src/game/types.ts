@@ -27,7 +27,12 @@ export interface DesiredDeployment {
   template: PodSpec;
 }
 
-export type DesiredResource = DesiredPod | DesiredDeployment;
+export interface DesiredService {
+  id: string;
+  kind: 'service';
+}
+
+export type DesiredResource = DesiredPod | DesiredDeployment | DesiredService;
 
 export type PodStatus = 'running' | 'pending';
 
@@ -79,6 +84,7 @@ export interface GameState {
   firedEvents: number[];
   tutorialStep: number | null;
   standalonePodsDeclared: number;
+  stickyTargetPodId: string | null;
 }
 
 export const NGINX_RESOURCES: Resources = { ram: 0.5, cpu: 0.25 };

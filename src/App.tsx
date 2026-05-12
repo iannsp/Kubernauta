@@ -16,6 +16,7 @@ export default function App() {
   const tick = useGame((s) => s.tick);
   const addStandalonePod = useGame((s) => s.addStandalonePod);
   const addDeployment = useGame((s) => s.addDeployment);
+  const addService = useGame((s) => s.addService);
 
   useEffect(() => {
     const id = setInterval(tick, TICK_MS);
@@ -31,6 +32,8 @@ export default function App() {
       addStandalonePod([{ image: 'nginx', resources: { ...NGINX_RESOURCES } }]);
     } else if (type === 'deployment') {
       addDeployment(3, { containers: [{ image: 'nginx', resources: { ...NGINX_RESOURCES } }] });
+    } else if (type === 'service') {
+      addService();
     }
   };
 

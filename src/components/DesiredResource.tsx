@@ -11,6 +11,25 @@ function ResourceBadge({ ram, cpu }: { ram: number; cpu: number }) {
   );
 }
 
+function ServiceCard({ id }: { id: string }) {
+  const remove = useGame((s) => s.removeDesired);
+  const connectedCount = useGame(
+    (s) => s.pods.filter((p) => p.status === 'running' && p.nodeId !== null).length
+  );
+  return (
+    <div className="resource service-card">
+      <div className="resource-header">
+        <span>🧲 Service</span>
+        <div className="controls">
+          <span className="resource-badge mono">→ {connectedCount} pod{connectedCount !== 1 ? 's' : ''}</span>
+          <button onClick={() => remove(id)} title="remover">×</button>
+        </div>
+      </div>
+      <div className="service-hint">endereço estável: roteia pra qualquer pod vivo</div>
+    </div>
+  );
+}
+
 export default function DesiredResource({ resource }: { resource: DR }) {
   const remove = useGame((s) => s.removeDesired);
   const setReplicas = useGame((s) => s.setReplicas);
@@ -46,6 +65,10 @@ export default function DesiredResource({ resource }: { resource: DR }) {
         <div className="container-card">🟢 nginx</div>
       </div>
     );
+  }
+
+  if (resource.kind === 'service') {
+    return <ServiceCard id={resource.id} />;
   }
 
   const r = podResourceSum(resource.template);

@@ -25,6 +25,9 @@ export function processTraffic(state: GameState, scene: Scene, now: number): Gam
   let particles = state.particles.filter((p) => now - p.bornAt < PARTICLE_TTL_MS);
   let metrics = { ...state.metrics };
   let nextAt = state.nextRequestAt;
+  let stickyId = state.stickyTargetPodId;
+
+  const hasService = state.desired.some((r) => r.kind === 'service');
 
   if (rps > 0) {
     const intervalMs = 1000 / rps;
@@ -32,32 +35,49 @@ export function processTraffic(state: GameState, scene: Scene, now: number): Gam
     while (nextAt <= now && generated < MAX_REQ_PER_TICK) {
       generated++;
       const aliveNodeIds = new Set(state.nodes.filter((n) => n.status === 'alive').map((n) => n.id));
-      const runningPods = pods.filter((p) => p.status === 'running' && p.nodeId && aliveNodeIds.has(p.nodeId));
+      const runningPods = pods.filter(
+        (p) => p.status === 'running' && p.nodeId && aliveNodeIds.has(p.nodeId)
+      );
 
-      if (runningPods.length === 0) {
+      let target = undefined as typeof runningPods[number] | undefined;
+
+      if (hasService) {
+        if (runningPods.length > 0) {
+          target = runningPods[Math.floor(Math.random() * runningPods.length)];
+        }
+      } else {
+        if (stickyId === null && runningPods.length > 0) {
+          stickyId = runningPods[Math.floor(Math.random() * runningPods.length)].id;
+        }
+        if (stickyId !== null) {
+          target = runningPods.find((p) => p.id === stickyId);
+        }
+      }
+
+      if (!target) {
         metrics.totalReqs++;
         metrics.failedReqs++;
-        particles = [...particles, { id: newParticleId(), status: 'failed', targetPodId: null, bornAt: nextAt }];
+        particles = [
+          ...particles,
+          { id: newParticleId(), status: 'failed', targetPodId: null, bornAt: nextAt },
+        ];
+      } else if (target.hitTimes.length >= POD_CAPACITY) {
+        metrics.totalReqs++;
+        metrics.failedReqs++;
+        particles = [
+          ...particles,
+          { id: newParticleId(), status: 'failed', targetPodId: target.id, bornAt: nextAt },
+        ];
       } else {
-        const target = runningPods[Math.floor(Math.random() * runningPods.length)];
-        if (target.hitTimes.length >= POD_CAPACITY) {
-          metrics.totalReqs++;
-          metrics.failedReqs++;
-          particles = [
-            ...particles,
-            { id: newParticleId(), status: 'failed', targetPodId: target.id, bornAt: nextAt },
-          ];
-        } else {
-          metrics.totalReqs++;
-          metrics.successReqs++;
-          pods = pods.map((p) =>
-            p.id === target.id ? { ...p, hitTimes: [...p.hitTimes, nextAt] } : p
-          );
-          particles = [
-            ...particles,
-            { id: newParticleId(), status: 'success', targetPodId: target.id, bornAt: nextAt },
-          ];
-        }
+        metrics.totalReqs++;
+        metrics.successReqs++;
+        pods = pods.map((p) =>
+          p.id === target!.id ? { ...p, hitTimes: [...p.hitTimes, nextAt] } : p
+        );
+        particles = [
+          ...particles,
+          { id: newParticleId(), status: 'success', targetPodId: target.id, bornAt: nextAt },
+        ];
       }
       nextAt += intervalMs;
     }
@@ -65,5 +85,5 @@ export function processTraffic(state: GameState, scene: Scene, now: number): Gam
     nextAt = now;
   }
 
-  return { ...state, pods, particles, nextRequestAt: nextAt, metrics };
+  return { ...state, pods, particles, nextRequestAt: nextAt, metrics, stickyTargetPodId: stickyId };
 }

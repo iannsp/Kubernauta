@@ -1,6 +1,6 @@
 import type { Resources } from './types';
 
-export type SceneEventAction = 'killRandomPod' | 'killRandomNode' | 'narrate';
+export type SceneEventAction = 'killRandomPod' | 'killStickyPod' | 'killRandomNode' | 'narrate';
 
 export interface Phase {
   startMs: number;
@@ -14,7 +14,7 @@ export interface SceneEvent {
   text?: string;
 }
 
-export type PieceKind = 'pod' | 'deployment';
+export type PieceKind = 'pod' | 'deployment' | 'service';
 
 export interface Scene {
   id: string;
@@ -118,6 +118,37 @@ export const scenes: Record<string, Scene> = {
       { atMs: 52_000, action: 'killRandomPod' },
     ],
     availablePieces: ['pod', 'deployment'],
+    nodeCapacity: { ram: 4, cpu: 2 },
+    nextSceneId: 'cena-4',
+  },
+  'cena-4': {
+    id: 'cena-4',
+    title: 'O endereço que muda',
+    introNarrative:
+      'Você sabe declarar pods e fazê-los renascer. Mas tem um problema invisível: cada pod novo nasce com IP novo. Quem aponta pra IP velho, encontra silêncio. Hoje você vai sentir isso — e descobrir a peça que resolve.',
+    objective:
+      'Mantenha o site no ar. Combine Deployment (pra recriar pods) com a peça nova — 🧲 Service — pra que o tráfego sempre ache os pods atuais, não os antigos.',
+    loadDescription: 'Tráfego constante de 1.5 req/s',
+    chaosDescription: '4 pods morrem ao longo da cena, ~12s entre cada',
+    outroSurvived:
+      'Você descobriu o Service. Sem ele, cada pod recriado é um endereço novo que ninguém conhece — tráfego cai mesmo com pods vivos. O Service é a recepção fixa do prédio: você liga pra recepção, ela acha quem está de plantão hoje. Em K8s real, isso é label selector — Service casa pods por etiqueta, não por IP.',
+    outroFailed:
+      'Site caiu. Pode ser que você tenha Deployment mas não Service: pods renascem, mas o tráfego ainda mira no endereço antigo e bate em parede. Service resolve isso — é o endereço estável na frente do gado.',
+    durationMs: 60_000,
+    phases: [
+      { startMs: 0, rps: 1.5, narrative: 'Tráfego entrando. Você precisa de pods e de um endereço estável.' },
+      { startMs: 30_000, rps: 1.5, narrative: 'Continua entrando. Service segura a onda mesmo com pods trocando.' },
+    ],
+    events: [
+      { atMs: 10_000, action: 'killStickyPod' },
+      { atMs: 11_000, action: 'narrate', text: '💀 Pod morreu. Quem fala com ele agora?' },
+      { atMs: 22_000, action: 'killStickyPod' },
+      { atMs: 23_000, action: 'narrate', text: '💀 De novo. IP novo nasceu — quem sabia do velho?' },
+      { atMs: 36_000, action: 'killStickyPod' },
+      { atMs: 37_000, action: 'narrate', text: '🧲 Service não se importa: roteia pro pod do momento.' },
+      { atMs: 50_000, action: 'killStickyPod' },
+    ],
+    availablePieces: ['pod', 'deployment', 'service'],
     nodeCapacity: { ram: 4, cpu: 2 },
     nextSceneId: null,
   },

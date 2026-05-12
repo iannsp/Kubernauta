@@ -15,6 +15,7 @@ let lastReconcileAt = 0;
 interface Actions {
   addStandalonePod: (containers: ContainerSpec[]) => void;
   addDeployment: (replicas: number, template: PodSpec) => void;
+  addService: () => void;
   removeDesired: (id: string) => void;
   setReplicas: (deploymentId: string, replicas: number) => void;
   killPod: (podId: string) => void;
@@ -57,6 +58,7 @@ function freshState(scenarioId: string): GameState {
     firedEvents: [],
     tutorialStep: 0,
     standalonePodsDeclared: 0,
+    stickyTargetPodId: null,
   };
 }
 
@@ -77,6 +79,15 @@ export const useGame = create<GameState & Actions>((set, get) => ({
     const id = newResourceId('deploy');
     const resource: DesiredResource = { id, kind: 'deployment', replicas, template };
     set((s) => ({ ...s, desired: [...s.desired, resource] }));
+  },
+
+  addService: () => {
+    set((s) => {
+      if (s.desired.some((r) => r.kind === 'service')) return s;
+      const id = newResourceId('svc');
+      const resource: DesiredResource = { id, kind: 'service' };
+      return { ...s, desired: [...s.desired, resource] };
+    });
   },
 
   removeDesired: (id) => set((s) => ({
@@ -149,6 +160,14 @@ export const useGame = create<GameState & Actions>((set, get) => ({
             const idx = Math.floor(Math.random() * next.pods.length);
             const victim = next.pods[idx];
             next = { ...next, pods: next.pods.filter((p) => p.id !== victim.id) };
+          } else if (ev.action === 'killStickyPod' && next.pods.length > 0) {
+            let victim = next.stickyTargetPodId
+              ? next.pods.find((p) => p.id === next.stickyTargetPodId)
+              : undefined;
+            if (!victim) {
+              victim = next.pods[Math.floor(Math.random() * next.pods.length)];
+            }
+            next = { ...next, pods: next.pods.filter((p) => p.id !== victim!.id) };
           } else if (ev.action === 'killRandomNode') {
             const alive = next.nodes.filter((n) => n.status === 'alive');
             if (alive.length > 0) {

@@ -225,6 +225,15 @@
   border-color: var(--accent);
   background: rgba(0, 122, 255, 0.03);
 }
+.resource.service-card {
+  border-color: #d4a017;
+  background: rgba(212, 160, 23, 0.05);
+}
+.service-hint {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
 .resource.deployment-card.pulsing {
   animation: pulse 400ms ease-out;
 }

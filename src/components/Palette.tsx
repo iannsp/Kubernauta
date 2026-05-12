@@ -4,7 +4,7 @@ import { scenes } from '../game/scenarios';
 
 interface ChipProps {
   id: string;
-  type: 'pod' | 'deployment';
+  type: 'pod' | 'deployment' | 'service';
   label: string;
 }
 
@@ -41,6 +41,9 @@ export default function Palette() {
       )}
       {available.includes('deployment') && (
         <DraggableChip id="palette-deploy" type="deployment" label="📋 Deployment ×3 (nginx)" />
+      )}
+      {available.includes('service') && (
+        <DraggableChip id="palette-svc" type="service" label="🧲 Service" />
       )}
     </div>
   );
