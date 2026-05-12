@@ -66,21 +66,25 @@ Forgiving por design — o foco é entender, não acertar score. A camada de
 
 ## Arco curricular
 
-Estado atual (commit `0ee61b3`):
+Estado atual (HEAD `e879e72`):
 
-| # | id        | Título               | Conceito                                          | Status |
-|---|-----------|---------------------|---------------------------------------------------|--------|
-| 1 | cena-1    | Primeiro dia        | Modelo declarativo: declare e o cluster materializa | ✓ feito |
-| 2 | cena-2    | O plantonista       | Pod solto exige plantão humano — não escala       | ✓ feito |
-| 3 | cena-3    | Bug intermitente    | Deployment como alívio: recria automaticamente    | ✓ feito |
-| 4 | cena-4    | Service magnet      | Pods perdem IP; Service é endereço estável       | a planejar |
-| 5 | cena-5    | Datacenter pegou fogo | Nodes morrem; pods migram (ou não)              | a planejar |
-| 6 | cena-6    | Rolling update      | Lançar versão nova sem downtime — ReplicaSet aparece | a planejar |
+| # | id        | Título                | Conceito                                              | Peças disponíveis      | Status |
+|---|-----------|-----------------------|-------------------------------------------------------|------------------------|--------|
+| 1 | cena-1    | Primeiro dia          | Declare e o cluster materializa (modelo declarativo)  | Pod                    | ✓ feito |
+| 2 | cena-2    | O plantonista         | Pod solto exige plantão humano — não escala           | Pod                    | ✓ feito |
+| 3 | cena-3    | Bug intermitente      | Deployment como alívio: recria automaticamente        | Pod, Deployment        | ✓ feito |
+| 4 | cena-4    | O endereço que muda   | Service como endereço estável; IPs efêmeros           | Pod, Deployment, Service | ✓ feito |
+| 5 | cena-5    | Datacenter pegou fogo | Desacoplamento Pod↔Node, capacity, stack completo     | Pod, Deployment, Service | ✓ feito |
+| 6 | cena-6    | Versão nova, sem queda | Rolling update; ReplicaSet visível só aqui           | Pod, Deployment, Service | ✓ feito |
 
 A separação Cena 2 (Plantonista, só Pod) e Cena 3 (Bug intermitente, libera
 Deployment) é deliberada: o jogador *sente falta* do Deployment antes de
 recebê-lo. Cena 2 sem alternativa força o "isso não pode ser certo, deve ter
 outro jeito".
+
+Cenas 4–6 foram planejadas por agente sub (Plan) em 2026-05-12 e executadas em
+sequência com tradeoffs validados pelo usuário (commits `2f78277`, `5c1ad03`,
+`e879e72`).
 
 ## Mecânicas
 
@@ -209,6 +213,48 @@ Tick interval: 100ms. Dentro:
   Service ("recepção"), Pending ("sala de espera"), Cluster ("cidade").
   Aplicação por cena conforme necessidade.
 
+## Adições das Cenas 4–6 (deltas técnicos)
+
+Cada cena nova introduziu mecânicas que outras podem reusar:
+
+### Cena 4 — Service magnet
+
+- **Peça nova `service`** (singleton por cena, sem label selector — auto-routing).
+  `DesiredService` no types; `addService` action; ServiceCard no DesiredResource.
+- **Roteamento bifurcado em `traffic.ts`**:
+  - Com Service no Desejado → random sobre pods rodando (igual antes).
+  - Sem Service → sticky: primeira request elege um pod (`stickyTargetPodId`);
+    requests subsequentes miram nele. Se morre, requests falham até Service
+    ser adicionado.
+- **Ação `killStickyPod`** mira no sticky pod especificamente (determinismo).
+- **Visual**: card amarelo-ocre `#d4a017`, sem indicador de "ligação" (particulas
+  já fazem o trabalho).
+
+### Cena 5 — Datacenter pegou fogo
+
+- **Nenhuma mecânica nova** — reusa `killRandomNode`, reconcile com capacity,
+  pending tray, Service.
+- **Tuning**: `nodeCapacity: { ram: 1, cpu: 0.5 }` (2 nginx pods por node);
+  2 nodes caem em 60s deixando 1 de pé com 2 slots de capacity.
+
+### Cena 6 — Versão nova, sem queda
+
+- **`DesiredDeployment.version: 'v1' | 'v2'`** (default v1); flip pelo
+  `triggerUpgrade(deploymentId)`.
+- **`RealPod.version` + `replicaSetId`**: cada pod sabe qual ReplicaSet pertence
+  (id formato `rs-${version}-${deploymentId}` ou `bare-${desiredId}`).
+- **Ramp logic em `reconciler.ts`**: quando `oldVersion.length > 0`, faz rolling
+  update com maxSurge=1, maxUnavailable=0, uma troca por tick:
+  - Se `currentVersion < replicas` e `total < replicas+1` → spawn 1 v2
+  - Senão se `oldVersion > 0` e (`currentVersion >= replicas` ou
+    `total >= replicas+1`) → kill 1 v1
+- **Ação `offerUpgrade`** seta `upgradeOffered: true` aos 20s.
+- **Botão "🚀 atualizar v1→v2"** aparece no card do Deployment quando
+  `upgradeOffered && resource.version === 'v1'`.
+- **Banner "ReplicaSets: ⚙ rs-v1-X ×N → ⚙ rs-v2-X ×M"** acima do cluster,
+  visível só quando `scene.showReplicaSets === true`.
+- **Pod v2 azul** (`#007aff` + emoji 🔵), v1 verde (igual antes).
+
 ## Decisões em aberto
 
 ### Indicadores de gap nos cards do Desejado
@@ -244,6 +290,12 @@ slide de peças. Hoje é lista; deve virar narrativa curta.
 - **Histórias para outros conceitos** (descritas na conversa, prontas pra
   uso): Node como prédio, Reconciler como jardineiro, Container como caixa,
   Service como recepção, Pending como sala de espera, Cluster como cidade.
+- **Sticky line visual na Cena 4**: linha tracejada do topo até o pod sticky
+  quando não há Service. Removido do MVP pra simplicidade — particulas já
+  contam a história.
+- **ReplicaSet com agrupamento visual mais elaborado**: hoje é banner em texto.
+  Podia virar caixas verticais como contêineres dentro do node mostrando
+  fisicamente o agrupamento.
 
 ## Como rodar
 
@@ -256,3 +308,62 @@ npm run dev
 
 Node 25+ é obrigatório (create-vite usa `node:util.styleText` que veio em 22+,
 e nosso ambiente só tem 19 e 25).
+
+## Como recuperar o status (para continuar daqui)
+
+**1. Onde está o código.** `/home/ivo/k8s-puzzle/`. Git inicializado, branch
+`master`. Sem remote configurado.
+
+**2. Histórico de commits significativos** (`git log --oneline`):
+
+```
+e879e72  Cena 6 Rolling update (Deployment com version + ReplicaSet visível)
+5c1ad03  Cena 5 Datacenter pegou fogo (2 nodes caem, capacity apertada)
+2f78277  Cena 4 Service magnet + sticky routing sem Service
+7e95245  DESIGN.md: notas de design vivas
+0ee61b3  Cena 2 Plantonista + reorder do arco (cena-3 = ex-cena-2)
+e6eb678  Tutorial pre-cena: 6 slides explicando a tela
+9828c4c  Initial baseline: cenas 1 e 2 funcionais
+```
+
+**3. Estado funcional**: 6 cenas jogáveis ponta-a-ponta. Tutorial de 6 slides
+abre antes da Cena 1. Capacity model (RAM/CPU + Pending) funciona em todas as
+cenas mas só pressiona em Cena 5. Service singleton sem label selector. Rolling
+update com maxSurge=1, maxUnavailable=0. Todos os outros são post-mortems
+estáticos por cena (não contextuais por telemetria — ver "Decisões em aberto").
+
+**4. Smoke test recomendado**:
+- Cena 1 (30s): drope um Pod, sobreviva tranquilo.
+- Cena 2 (60s): drope um Pod, espere 8s, drope outro, repita. Veja contador
+  "pods declarados" crescer no HUD.
+- Cena 3 (60s): drope Deployment ×3. Sobrevive sem esforço — Deployment recria.
+- Cena 4 (60s): drope só Deployment ×3 → falha (`killStickyPod` mata o sticky,
+  Deployment recria com IP novo mas tráfego não acha). Tente de novo com
+  Deployment ×3 + Service → sobrevive.
+- Cena 5 (60s): Deployment ×3 + Service → sobrevive (pods migram pra outros
+  nodes); alguns pods ficam Pending quando só sobra 1 node.
+- Cena 6 (60s): Deployment ×3 + Service → aos 20s o botão 🚀 libera no card
+  do Deployment. Clique. Banner mostra rs-v1 esvaziando, rs-v2 enchendo.
+  Pods azuis (🔵) substituem verdes (🟢) gradualmente. Sem queda no uptime.
+
+**5. O que está pendente** (ver seções acima):
+
+| Pendente | Esforço | Por que importa |
+|----------|---------|-----------------|
+| Indicadores de gap nos cards do Desejado (🟢/🟡/🔴) | médio | Torna o gap Desejado↔Real visível em tempo real, não só pela narrativa |
+| Telemetria por cena pra outros contextuais | médio-alto | Outros que referenciam o que de fato aconteceu ("Gap 🔴 durou 18s...") em vez de string fixa |
+| Reescrever slide 5 do tutorial com história "gado/pastor" | baixo | Já temos o texto pronto; é só substituir |
+| Histórias dos demais conceitos (Node, Reconciler, etc.) | baixo cada | Esqueletos prontos na conversa; aplicar onde fizer sentido |
+| Partículas com peso | médio | Abre conceitos novos (sizing, escala não-linear). Marcado como backlog. |
+
+**6. Arquivos-chave para mexer em coisas comuns**:
+
+- Adicionar/editar cena → `src/game/scenarios.ts`
+- Mudar mecânica de tráfego → `src/game/traffic.ts`
+- Mudar lógica de scheduling/reconciliação → `src/game/reconciler.ts`
+- Mudar estado global ou actions → `src/game/store.ts`
+- Mudar UI da peça no Desejado → `src/components/DesiredResource.tsx`
+- Mudar UI do cluster/pods/nodes → `src/components/RealSide.tsx`
+- Mudar overlays de intro/outro → `src/components/SceneOverlay.tsx`
+- Mudar tutorial → `src/components/Tutorial.tsx`
+- Estilos visuais → `src/App.css`
