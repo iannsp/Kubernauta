@@ -12,6 +12,7 @@ export default function Hud() {
   const sceneStatus = useGame((s) => s.sceneStatus);
   const scenarioId = useGame((s) => s.scenarioId);
   const metrics = useGame((s) => s.metrics);
+  const standalonePodsDeclared = useGame((s) => s.standalonePodsDeclared);
   const scene = scenes[scenarioId];
 
   const [now, setNow] = useState(Date.now());
@@ -42,6 +43,12 @@ export default function Hud() {
           {uptime}% ({metrics.successReqs}/{metrics.totalReqs})
         </span>
       </div>
+      {standalonePodsDeclared > 0 && (
+        <div className="hud-cell" title="Quantos Pods avulsos você declarou nesta cena (Deployments não contam)">
+          <span className="hud-label">pods declarados</span>
+          <span className="hud-value mono">{standalonePodsDeclared}</span>
+        </div>
+      )}
     </div>
   );
 }

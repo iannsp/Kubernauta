@@ -56,6 +56,7 @@ function freshState(scenarioId: string): GameState {
     lastPhaseLogged: -1,
     firedEvents: [],
     tutorialStep: 0,
+    standalonePodsDeclared: 0,
   };
 }
 
@@ -66,7 +67,10 @@ export const useGame = create<GameState & Actions>((set, get) => ({
     const id = newResourceId('pod');
     const spec: PodSpec = { containers };
     const resource: DesiredResource = { id, kind: 'pod', spec };
-    set((s) => manifestStandalonePod({ ...s, desired: [...s.desired, resource] }, id, spec));
+    set((s) => {
+      const next = manifestStandalonePod({ ...s, desired: [...s.desired, resource] }, id, spec);
+      return { ...next, standalonePodsDeclared: next.standalonePodsDeclared + 1 };
+    });
   },
 
   addDeployment: (replicas, template) => {
@@ -156,6 +160,8 @@ export const useGame = create<GameState & Actions>((set, get) => ({
                 ),
               };
             }
+          } else if (ev.action === 'narrate' && ev.text) {
+            next = { ...next, narrativeLog: [...next.narrativeLog, ev.text] };
           }
           fired = [...fired, i];
         }

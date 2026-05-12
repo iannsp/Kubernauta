@@ -78,6 +78,7 @@ export interface GameState {
   lastPhaseLogged: number;
   firedEvents: number[];
   tutorialStep: number | null;
+  standalonePodsDeclared: number;
 }
 
 export const NGINX_RESOURCES: Resources = { ram: 0.5, cpu: 0.25 };

@@ -32,8 +32,12 @@ export default function SceneOverlay() {
               </span>
             </div>
             <div>
-              <span className="meta-label">Réplicas sugeridas</span>
-              <span className="mono">×{scene.recommendedReplicas}</span>
+              <span className="meta-label">Tráfego</span>
+              <span>{scene.loadDescription}</span>
+            </div>
+            <div>
+              <span className="meta-label">Imprevistos</span>
+              <span>{scene.chaosDescription}</span>
             </div>
             <div>
               <span className="meta-label">Duração</span>

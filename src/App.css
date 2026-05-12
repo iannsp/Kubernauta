@@ -557,6 +557,11 @@
 .overlay-meta > div {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.overlay-meta > div > span:last-child {
+  text-align: right;
 }
 .meta-label {
   color: var(--muted);
