@@ -1,6 +1,6 @@
 import type { Resources } from './types';
 
-export type SceneEventAction = 'killRandomPod' | 'killStickyPod' | 'killRandomNode' | 'narrate';
+export type SceneEventAction = 'killRandomPod' | 'killStickyPod' | 'killRandomNode' | 'narrate' | 'offerUpgrade';
 
 export interface Phase {
   startMs: number;
@@ -31,6 +31,7 @@ export interface Scene {
   availablePieces: PieceKind[];
   nodeCapacity: Resources;
   nextSceneId: string | null;
+  showReplicaSets?: boolean;
 }
 
 export const scenes: Record<string, Scene> = {
@@ -179,7 +180,35 @@ export const scenes: Record<string, Scene> = {
     ],
     availablePieces: ['pod', 'deployment', 'service'],
     nodeCapacity: { ram: 1, cpu: 0.5 },
+    nextSceneId: 'cena-6',
+  },
+  'cena-6': {
+    id: 'cena-6',
+    title: 'Versão nova, sem queda',
+    introNarrative:
+      'Seu site precisa atualizar pra nginx v2. Em servidor antigo isso era: derruba tudo, sobe novo, reza. Aqui não. K8s tem um truque: dois ReplicaSets convivem por alguns segundos — um descendo, outro subindo. Você nunca fica sem ninguém atendendo.',
+    objective:
+      'Suba Deployment + Service rodando v1. Quando aparecer o botão 🚀 no card do Deployment, clique. O Deployment vai orquestrar a transição sem queda.',
+    loadDescription: 'Tráfego constante de 1.5 req/s',
+    chaosDescription: 'Aos 20s chega a ordem de upgrade. Sem queda permitida durante a transição.',
+    outroSurvived:
+      'Você fez um rolling update. Por baixo do Deployment, dois ReplicaSets coexistiram: o velho (v1) escalou pra baixo enquanto o novo (v2) escalou pra cima. Em momento nenhum a soma de pods saudáveis bateu zero. Service apontou pra ambos durante a transição. Isso é deploy sem downtime — o pão com manteiga do K8s.',
+    outroFailed:
+      'Caiu durante o upgrade. Provável causa: faltou Deployment com réplicas (sem controller, nada se reorganiza), faltou Service (tráfego ficou preso no IP velho), ou faltou capacity pros dois ReplicaSets coexistirem por alguns segundos.',
+    durationMs: 60_000,
+    phases: [
+      { startMs: 0, rps: 1.5, narrative: 'Site v1 rodando. Suba o Deployment e o Service.' },
+      { startMs: 20_000, rps: 1.5, narrative: '📨 Ordem chegou: subir v2. Botão 🚀 liberado no Deployment.' },
+      { startMs: 45_000, rps: 1.5, narrative: 'Transição em curso ou concluída. Aguente a onda.' },
+    ],
+    events: [
+      { atMs: 20_000, action: 'offerUpgrade' },
+      { atMs: 20_500, action: 'narrate', text: '📨 Versão nova disponível. Clique 🚀 no card do Deployment.' },
+    ],
+    availablePieces: ['pod', 'deployment', 'service'],
+    nodeCapacity: { ram: 4, cpu: 2 },
     nextSceneId: null,
+    showReplicaSets: true,
   },
 };
 

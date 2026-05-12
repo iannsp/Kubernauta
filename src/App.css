@@ -234,6 +234,72 @@
   color: var(--muted);
   margin-top: 2px;
 }
+
+.version-tag {
+  font-size: 10px;
+  background: var(--bg);
+  color: var(--muted);
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-left: 4px;
+}
+.upgrade-btn {
+  width: 100%;
+  padding: 6px 10px;
+  margin: 8px 0;
+  border: 1px solid var(--accent);
+  background: rgba(0, 122, 255, 0.1);
+  color: var(--accent);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+.upgrade-btn:hover {
+  background: rgba(0, 122, 255, 0.18);
+}
+
+.replica-set-banner {
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+.rs-banner-label {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 10px;
+  font-weight: 600;
+}
+.rs-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+.rs-chip.rs-v1 {
+  background: rgba(52, 199, 89, 0.1);
+  color: #1f7a3d;
+  border: 1px solid var(--green);
+}
+.rs-chip.rs-v2 {
+  background: rgba(0, 122, 255, 0.1);
+  color: #004ec2;
+  border: 1px solid var(--accent);
+}
+.rs-arrow {
+  color: var(--muted);
+  font-weight: 400;
+}
 .resource.deployment-card.pulsing {
   animation: pulse 400ms ease-out;
 }
@@ -422,6 +488,11 @@
   cursor: pointer;
   overflow: hidden;
 }
+.real-pod.pod-v2 {
+  background: #d5edff;
+  border-color: #007aff;
+  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.35);
+}
 .real-pod-fill {
   position: absolute;
   bottom: 0;
@@ -430,6 +501,9 @@
   background: var(--green);
   transition: height 200ms ease-out;
   pointer-events: none;
+}
+.real-pod.pod-v2 .real-pod-fill {
+  background: #007aff;
 }
 .real-pod-emoji {
   position: relative;

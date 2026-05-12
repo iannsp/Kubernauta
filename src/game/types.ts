@@ -20,11 +20,14 @@ export interface DesiredPod {
   spec: PodSpec;
 }
 
+export type AppVersion = 'v1' | 'v2';
+
 export interface DesiredDeployment {
   id: string;
   kind: 'deployment';
   replicas: number;
   template: PodSpec;
+  version: AppVersion;
 }
 
 export interface DesiredService {
@@ -44,6 +47,8 @@ export interface RealPod {
   nodeId: string | null;
   spec: PodSpec;
   hitTimes: number[];
+  version: AppVersion;
+  replicaSetId: string;
 }
 
 export interface RealNode {
@@ -85,6 +90,7 @@ export interface GameState {
   tutorialStep: number | null;
   standalonePodsDeclared: number;
   stickyTargetPodId: string | null;
+  upgradeOffered: boolean;
 }
 
 export const NGINX_RESOURCES: Resources = { ram: 0.5, cpu: 0.25 };

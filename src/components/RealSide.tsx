@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useGame } from '../game/store';
 import { podResourceSum, type RealNode, type RealPod } from '../game/types';
 import { POD_CAPACITY } from '../game/traffic';
+import { scenes } from '../game/scenarios';
 import Particles from './Particles';
 
 function freeOnNode(node: RealNode, pods: RealPod[]) {
@@ -32,12 +33,12 @@ function PodCircle({ pod, onKill }: { pod: RealPod; onKill: () => void }) {
       animate={{ scale: 1, opacity: 1 }}
       exit={{ scale: 0, opacity: 0 }}
       transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-      className="real-pod"
-      title="clique para matar este pod"
+      className={`real-pod pod-${pod.version}`}
+      title={`clique para matar (${pod.version})`}
       onClick={onKill}
     >
       <div className="real-pod-fill" style={{ height: `${load * 100}%` }} />
-      <span className="real-pod-emoji">🟢</span>
+      <span className="real-pod-emoji">{pod.version === 'v2' ? '🔵' : '🟢'}</span>
     </motion.div>
   );
 }
@@ -46,8 +47,22 @@ export default function RealSide() {
   const nodes = useGame((s) => s.nodes);
   const pods = useGame((s) => s.pods);
   const killPod = useGame((s) => s.killPod);
+  const scenarioId = useGame((s) => s.scenarioId);
+  const showReplicaSets = scenes[scenarioId]?.showReplicaSets;
 
   const pendingPods = pods.filter((p) => p.status === 'pending');
+
+  const replicaSets = showReplicaSets
+    ? Array.from(
+        pods.reduce((acc, p) => {
+          if (p.desiredKind !== 'deployment') return acc;
+          const rs = acc.get(p.replicaSetId) ?? { id: p.replicaSetId, version: p.version, count: 0 };
+          rs.count += 1;
+          acc.set(p.replicaSetId, rs);
+          return acc;
+        }, new Map<string, { id: string; version: string; count: number }>()).values()
+      ).sort((a, b) => a.version.localeCompare(b.version))
+    : [];
 
   return (
     <section className="side real">
@@ -55,6 +70,17 @@ export default function RealSide() {
         <h2>Real</h2>
         <p className="subtitle">o que está acontecendo</p>
       </div>
+      {showReplicaSets && replicaSets.length > 0 && (
+        <div className="replica-set-banner">
+          <span className="rs-banner-label">ReplicaSets:</span>
+          {replicaSets.map((rs, i) => (
+            <span key={rs.id} className={`rs-chip rs-${rs.version}`}>
+              ⚙ {rs.id} <span className="mono">×{rs.count}</span>
+              {i < replicaSets.length - 1 && <span className="rs-arrow"> → </span>}
+            </span>
+          ))}
+        </div>
+      )}
       <div className="real-stage">
         <Particles />
         <div className="cluster">

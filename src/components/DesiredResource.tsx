@@ -33,6 +33,8 @@ function ServiceCard({ id }: { id: string }) {
 export default function DesiredResource({ resource }: { resource: DR }) {
   const remove = useGame((s) => s.removeDesired);
   const setReplicas = useGame((s) => s.setReplicas);
+  const triggerUpgrade = useGame((s) => s.triggerUpgrade);
+  const upgradeOffered = useGame((s) => s.upgradeOffered);
   const podCountForDeployment = useGame((s) =>
     resource.kind === 'deployment'
       ? s.pods.filter((p) => p.desiredKind === 'deployment' && p.desiredId === resource.id).length
@@ -72,10 +74,14 @@ export default function DesiredResource({ resource }: { resource: DR }) {
   }
 
   const r = podResourceSum(resource.template);
+  const canUpgrade = upgradeOffered && resource.version === 'v1';
+  const containerEmoji = resource.version === 'v2' ? '🔵' : '🟢';
   return (
     <div className={`resource deployment-card ${pulse ? 'pulsing' : ''}`}>
       <div className="resource-header">
-        <span>📋 Deployment</span>
+        <span>
+          📋 Deployment <span className="version-tag mono">{resource.version}</span>
+        </span>
         <div className="controls">
           <button onClick={() => setReplicas(resource.id, resource.replicas - 1)} title="menos">−</button>
           <span className="replicas">×{resource.replicas}</span>
@@ -83,10 +89,15 @@ export default function DesiredResource({ resource }: { resource: DR }) {
           <button onClick={() => remove(resource.id)} title="remover">×</button>
         </div>
       </div>
+      {canUpgrade && (
+        <button className="upgrade-btn" onClick={() => triggerUpgrade(resource.id)}>
+          🚀 atualizar v1 → v2
+        </button>
+      )}
       <div className="template-label">modelo de Pod ({r.ram} GB · {r.cpu} cores cada):</div>
       <div className="pod-card-inner">
         <div className="pod-label">📦 Pod</div>
-        <div className="container-card">🟢 nginx</div>
+        <div className="container-card">{containerEmoji} nginx {resource.version}</div>
       </div>
     </div>
   );

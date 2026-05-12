@@ -16,6 +16,7 @@ interface Actions {
   addStandalonePod: (containers: ContainerSpec[]) => void;
   addDeployment: (replicas: number, template: PodSpec) => void;
   addService: () => void;
+  triggerUpgrade: (deploymentId: string) => void;
   removeDesired: (id: string) => void;
   setReplicas: (deploymentId: string, replicas: number) => void;
   killPod: (podId: string) => void;
@@ -59,6 +60,7 @@ function freshState(scenarioId: string): GameState {
     tutorialStep: 0,
     standalonePodsDeclared: 0,
     stickyTargetPodId: null,
+    upgradeOffered: false,
   };
 }
 
@@ -77,8 +79,17 @@ export const useGame = create<GameState & Actions>((set, get) => ({
 
   addDeployment: (replicas, template) => {
     const id = newResourceId('deploy');
-    const resource: DesiredResource = { id, kind: 'deployment', replicas, template };
+    const resource: DesiredResource = { id, kind: 'deployment', replicas, template, version: 'v1' };
     set((s) => ({ ...s, desired: [...s.desired, resource] }));
+  },
+
+  triggerUpgrade: (deploymentId: string) => {
+    set((s) => ({
+      ...s,
+      desired: s.desired.map((r) =>
+        r.id === deploymentId && r.kind === 'deployment' ? { ...r, version: 'v2' } : r
+      ),
+    }));
   },
 
   addService: () => {
@@ -181,6 +192,8 @@ export const useGame = create<GameState & Actions>((set, get) => ({
             }
           } else if (ev.action === 'narrate' && ev.text) {
             next = { ...next, narrativeLog: [...next.narrativeLog, ev.text] };
+          } else if (ev.action === 'offerUpgrade') {
+            next = { ...next, upgradeOffered: true };
           }
           fired = [...fired, i];
         }

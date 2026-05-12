@@ -1,4 +1,5 @@
 import {
+  type AppVersion,
   type DesiredDeployment,
   type GameState,
   type PodSpec,
@@ -34,7 +35,14 @@ function scheduleNode(nodes: RealNode[], pods: RealPod[], need: Resources): Real
   return candidates[Math.floor(Math.random() * candidates.length)];
 }
 
-function newPod(desiredId: string, desiredKind: 'pod' | 'deployment', spec: PodSpec, node: RealNode | undefined): RealPod {
+function newPod(
+  desiredId: string,
+  desiredKind: 'pod' | 'deployment',
+  spec: PodSpec,
+  node: RealNode | undefined,
+  version: AppVersion,
+  replicaSetId: string
+): RealPod {
   return {
     id: newPodId(),
     desiredId,
@@ -43,8 +51,12 @@ function newPod(desiredId: string, desiredKind: 'pod' | 'deployment', spec: PodS
     nodeId: node ? node.id : null,
     spec,
     hitTimes: [],
+    version,
+    replicaSetId,
   };
 }
+
+const MAX_SURGE = 1;
 
 export function reconcile(state: GameState): GameState {
   const aliveNodeIds = new Set(state.nodes.filter((n) => n.status === 'alive').map((n) => n.id));
@@ -57,17 +69,37 @@ export function reconcile(state: GameState): GameState {
     if (resource.kind !== 'deployment') continue;
     const deployment = resource as DesiredDeployment;
     const owned = pods.filter((p) => p.desiredKind === 'deployment' && p.desiredId === deployment.id);
-    const diff = deployment.replicas - owned.length;
-    if (diff > 0) {
-      const need = podResourceSum(deployment.template);
-      for (let i = 0; i < diff; i++) {
-        const node = scheduleNode(state.nodes, pods, need);
-        pods = [...pods, newPod(deployment.id, 'deployment', deployment.template, node)];
+    const targetVersion = deployment.version;
+    const currentVersion = owned.filter((p) => p.version === targetVersion);
+    const oldVersion = owned.filter((p) => p.version !== targetVersion);
+    const targetReplicas = deployment.replicas;
+    const need = podResourceSum(deployment.template);
+
+    if (oldVersion.length === 0) {
+      // No version transition; classic logic.
+      const diff = targetReplicas - currentVersion.length;
+      if (diff > 0) {
+        for (let i = 0; i < diff; i++) {
+          const node = scheduleNode(state.nodes, pods, need);
+          const rsId = `rs-${targetVersion}-${deployment.id}`;
+          pods = [...pods, newPod(deployment.id, 'deployment', deployment.template, node, targetVersion, rsId)];
+        }
+      } else if (diff < 0) {
+        const toKill = -diff;
+        const ownedIds = new Set(currentVersion.slice(0, toKill).map((p) => p.id));
+        pods = pods.filter((p) => !ownedIds.has(p.id));
       }
-    } else if (diff < 0) {
-      const toKill = -diff;
-      const ownedIds = new Set(owned.slice(0, toKill).map((p) => p.id));
-      pods = pods.filter((p) => !ownedIds.has(p.id));
+    } else {
+      // Rolling update: one change per tick.
+      const total = currentVersion.length + oldVersion.length;
+      if (currentVersion.length < targetReplicas && total < targetReplicas + MAX_SURGE) {
+        const node = scheduleNode(state.nodes, pods, need);
+        const rsId = `rs-${targetVersion}-${deployment.id}`;
+        pods = [...pods, newPod(deployment.id, 'deployment', deployment.template, node, targetVersion, rsId)];
+      } else if (oldVersion.length > 0 && (currentVersion.length >= targetReplicas || total >= targetReplicas + MAX_SURGE)) {
+        const victim = oldVersion[0];
+        pods = pods.filter((p) => p.id !== victim.id);
+      }
     }
   }
 
@@ -85,5 +117,6 @@ export function reconcile(state: GameState): GameState {
 
 export function manifestStandalonePod(state: GameState, desiredId: string, spec: PodSpec): GameState {
   const node = scheduleNode(state.nodes, state.pods, podResourceSum(spec));
-  return { ...state, pods: [...state.pods, newPod(desiredId, 'pod', spec, node)] };
+  const rsId = `bare-${desiredId}`;
+  return { ...state, pods: [...state.pods, newPod(desiredId, 'pod', spec, node, 'v1', rsId)] };
 }
