@@ -578,3 +578,176 @@
 .overlay-primary:hover {
   filter: brightness(1.05);
 }
+
+/* ───── Tutorial ───── */
+
+.tutorial-overlay {
+  z-index: 200;
+}
+.tutorial-card {
+  background: var(--panel);
+  border-radius: 16px;
+  padding: 24px 32px 28px;
+  max-width: 540px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+  border-top: 4px solid #5856d6;
+}
+.tutorial-progress {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.tutorial-step {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.tutorial-skip {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.tutorial-skip:hover { color: var(--text); }
+.tutorial-card h2 {
+  margin: 0 0 14px;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text);
+}
+.tutorial-body {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text);
+}
+.tutorial-body p {
+  margin: 0 0 10px;
+}
+.tutorial-body p:last-child { margin-bottom: 0; }
+.tutorial-body strong { color: var(--text); }
+.tutorial-body em { color: var(--muted); font-style: italic; }
+.tutorial-diagram-wrap {
+  margin: 18px 0;
+  padding: 14px;
+  background: var(--bg);
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+}
+
+.tut-diagram {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.tut-diagram-split {
+  width: 100%;
+  justify-content: space-around;
+}
+.tut-diagram-nodes {
+  gap: 16px;
+}
+.tut-diagram-pieces {
+  gap: 16px;
+}
+.tut-arrow {
+  font-size: 18px;
+  color: var(--muted);
+}
+.tut-box {
+  padding: 10px 14px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.tut-box-accent {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.tut-half {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.tut-label {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.tut-mini-card {
+  padding: 8px 12px;
+  background: var(--panel);
+  border: 1.5px dashed var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+}
+.tut-mini-node {
+  padding: 10px 14px;
+  background: var(--panel);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.tut-mini-node-detailed {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: stretch;
+  min-width: 220px;
+}
+.tut-mini-node-label {
+  text-align: left;
+  font-size: 11px;
+}
+.tut-mini-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.tut-mini-bar > span:first-child {
+  width: 26px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+.tut-mini-bar > span:last-child {
+  min-width: 50px;
+  text-align: right;
+}
+.tut-mini-bar-track {
+  flex: 1;
+  height: 6px;
+  background: var(--bg);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.tut-mini-bar-fill {
+  height: 100%;
+}
+.tut-mini-bar-fill.ram { background: #5856d6; }
+.tut-mini-bar-fill.cpu { background: #ff9500; }
+.tut-piece {
+  padding: 10px 16px;
+  background: var(--panel);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.tut-piece-accent {
+  border-color: var(--accent);
+  background: rgba(0, 122, 255, 0.05);
+  color: var(--accent);
+}

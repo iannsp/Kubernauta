@@ -77,6 +77,7 @@ export interface GameState {
   narrativeLog: string[];
   lastPhaseLogged: number;
   firedEvents: number[];
+  tutorialStep: number | null;
 }
 
 export const NGINX_RESOURCES: Resources = { ram: 0.5, cpu: 0.25 };

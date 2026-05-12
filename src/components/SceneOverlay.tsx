@@ -4,6 +4,7 @@ import { scenes } from '../game/scenarios';
 export default function SceneOverlay() {
   const sceneStatus = useGame((s) => s.sceneStatus);
   const scenarioId = useGame((s) => s.scenarioId);
+  const tutorialStep = useGame((s) => s.tutorialStep);
   const startScene = useGame((s) => s.startScene);
   const retryScene = useGame((s) => s.retryScene);
   const advanceScene = useGame((s) => s.advanceScene);
@@ -11,6 +12,7 @@ export default function SceneOverlay() {
   const scene = scenes[scenarioId];
 
   if (sceneStatus === 'running') return null;
+  if (tutorialStep !== null) return null;
 
   if (sceneStatus === 'intro') {
     return (

@@ -7,6 +7,7 @@ import InstructorPanel from './components/InstructorPanel';
 import HistoryPanel from './components/HistoryPanel';
 import Hud from './components/Hud';
 import SceneOverlay from './components/SceneOverlay';
+import Tutorial from './components/Tutorial';
 import './App.css';
 
 const TICK_MS = 100;
@@ -43,6 +44,7 @@ export default function App() {
         </div>
         <InstructorPanel />
         <SceneOverlay />
+        <Tutorial />
       </div>
     </DndContext>
   );

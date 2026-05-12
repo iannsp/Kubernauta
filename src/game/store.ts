@@ -26,7 +26,13 @@ interface Actions {
   startScene: () => void;
   retryScene: () => void;
   advanceScene: () => void;
+
+  nextTutorialStep: () => void;
+  skipTutorial: () => void;
+  restartTutorial: () => void;
 }
+
+export const TUTORIAL_TOTAL_STEPS = 6;
 
 function freshState(scenarioId: string): GameState {
   const cap = scenes[scenarioId].nodeCapacity;
@@ -49,6 +55,7 @@ function freshState(scenarioId: string): GameState {
     narrativeLog: [],
     lastPhaseLogged: -1,
     firedEvents: [],
+    tutorialStep: 0,
   };
 }
 
@@ -195,7 +202,7 @@ export const useGame = create<GameState & Actions>((set, get) => ({
   },
 
   retryScene: () => {
-    set((s) => freshState(s.scenarioId));
+    set((s) => ({ ...freshState(s.scenarioId), tutorialStep: s.tutorialStep }));
     lastReconcileAt = 0;
   },
 
@@ -204,8 +211,19 @@ export const useGame = create<GameState & Actions>((set, get) => ({
       const current = scenes[s.scenarioId];
       const nextId = current.nextSceneId;
       if (!nextId) return s;
-      return freshState(nextId);
+      return { ...freshState(nextId), tutorialStep: s.tutorialStep };
     });
     lastReconcileAt = 0;
   },
+
+  nextTutorialStep: () =>
+    set((s) => {
+      if (s.tutorialStep === null) return s;
+      const next = s.tutorialStep + 1;
+      return { ...s, tutorialStep: next >= TUTORIAL_TOTAL_STEPS ? null : next };
+    }),
+
+  skipTutorial: () => set((s) => ({ ...s, tutorialStep: null })),
+
+  restartTutorial: () => set((s) => ({ ...s, tutorialStep: 0 })),
 }));
