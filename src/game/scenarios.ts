@@ -150,6 +150,35 @@ export const scenes: Record<string, Scene> = {
     ],
     availablePieces: ['pod', 'deployment', 'service'],
     nodeCapacity: { ram: 4, cpu: 2 },
+    nextSceneId: 'cena-5',
+  },
+  'cena-5': {
+    id: 'cena-5',
+    title: 'Datacenter pegou fogo',
+    introNarrative:
+      'Notícia ruim: um rack inteiro do datacenter foi pro chão. Nodes inteiros vão sumir. Pods que estavam neles, somem juntos. Você descobre agora se declarou o suficiente — e se o cluster tem fôlego pros pods migrarem.',
+    objective:
+      'Use Deployment pra recriar pods perdidos, Service pra rotear pros pods novos, e pense em capacity: cada node aguenta poucos pods.',
+    loadDescription: 'Tráfego constante de 2 req/s',
+    chaosDescription: '1 node cai aos 20s, outro aos 40s. No final, sobra 1 node de pé.',
+    outroSurvived:
+      'Sobreviveu. Quando o node caiu, os pods dele evaporaram — mas o Deployment notou o gap e recriou em nodes vivos. Service apontou pros pods novos automaticamente. Em K8s real: pod não é amarrado ao node; node não é amarrado ao pod. Desacoplamento é resiliência.',
+    outroFailed:
+      'Caiu junto com o node. Pods soltos somem com o prédio; só Deployment recria. E mesmo Deployment falha se o tráfego ainda mira no IP antigo — sem Service, recriar não é o bastante. Resiliência exige declarar a peça inteira: Deployment + Service + capacity sobrando.',
+    durationMs: 60_000,
+    phases: [
+      { startMs: 0, rps: 2, narrative: 'Cluster operando normal. 3 nodes, todos vivos.' },
+      { startMs: 20_000, rps: 2, narrative: '🔥 Alarme no datacenter.' },
+      { startMs: 40_000, rps: 2, narrative: '🔥 Outro rack foi.' },
+    ],
+    events: [
+      { atMs: 20_000, action: 'killRandomNode' },
+      { atMs: 21_000, action: 'narrate', text: '⚡ Node caiu. Os pods dele sumiram. Quem recria?' },
+      { atMs: 40_000, action: 'killRandomNode' },
+      { atMs: 41_000, action: 'narrate', text: '⚡ Outro foi. Só sobrou 1 node de pé.' },
+    ],
+    availablePieces: ['pod', 'deployment', 'service'],
+    nodeCapacity: { ram: 1, cpu: 0.5 },
     nextSceneId: null,
   },
 };
