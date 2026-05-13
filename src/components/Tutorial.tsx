@@ -35,7 +35,7 @@ const slides: Slide[] = [
     body: (
       <>
         <p>
-          <strong>Esquerda — Desejado:</strong> onde você arrasta peças. É a sua intenção.
+          <strong>Esquerda — Desejado:</strong> onde você coloca as peças. É a sua intenção.
         </p>
         <p>
           <strong>Direita — Real:</strong> o que o cluster está de fato executando.
