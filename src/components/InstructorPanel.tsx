@@ -5,7 +5,7 @@ export default function InstructorPanel() {
   const toggleNode = useGame((s) => s.toggleNode);
   const togglePause = useGame((s) => s.togglePause);
   const paused = useGame((s) => s.paused);
-  const reset = useGame((s) => s.reset);
+  const retryScene = useGame((s) => s.retryScene);
   const nodes = useGame((s) => s.nodes);
 
   return (
@@ -20,7 +20,7 @@ export default function InstructorPanel() {
         </button>
       ))}
       <button onClick={togglePause}>{paused ? '▶ retomar' : '⏸ pausar'} tempo</button>
-      <button onClick={reset}>↻ resetar</button>
+      <button onClick={retryScene}>↻ resetar</button>
     </footer>
   );
 }
