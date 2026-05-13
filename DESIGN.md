@@ -68,14 +68,38 @@ Forgiving por design — o foco é entender, não acertar score. A camada de
 
 Estado atual (HEAD `e879e72`):
 
-| # | id        | Título                | Conceito                                              | Peças disponíveis      | Status |
-|---|-----------|-----------------------|-------------------------------------------------------|------------------------|--------|
-| 1 | cena-1    | Primeiro dia          | Declare e o cluster materializa (modelo declarativo)  | Pod                    | ✓ feito |
-| 2 | cena-2    | O plantonista         | Pod solto exige plantão humano — não escala           | Pod                    | ✓ feito |
-| 3 | cena-3    | Bug intermitente      | Deployment como alívio: recria automaticamente        | Pod, Deployment        | ✓ feito |
-| 4 | cena-4    | O endereço que muda   | Service como endereço estável; IPs efêmeros           | Pod, Deployment, Service | ✓ feito |
-| 5 | cena-5    | Datacenter pegou fogo | Desacoplamento Pod↔Node, capacity, stack completo     | Pod, Deployment, Service | ✓ feito |
-| 6 | cena-6    | Versão nova, sem queda | Rolling update; ReplicaSet visível só aqui           | Pod, Deployment, Service | ✓ feito |
+| # | id     | Título                 | Modo          | Conceito                                          | Peças                    |
+|---|--------|------------------------|---------------|---------------------------------------------------|--------------------------|
+| 1 | cena-1 | Primeiro dia           | Pré-declarado | Declare e o cluster materializa                   | Pod                      |
+| 2 | cena-2 | O plantonista          | Reativo       | Pod solto exige plantão humano — não escala       | Pod                      |
+| 3 | cena-3 | Bug intermitente       | Pré-declarado | Deployment como alívio: recria automaticamente    | Pod, Deployment          |
+| 4 | cena-4 | O endereço que muda    | Pré-declarado | Service como endereço estável; IPs efêmeros       | Pod, Deployment, Service |
+| 5 | cena-5 | Datacenter pegou fogo  | Pré-declarado | Desacoplamento Pod↔Node, capacity, stack completo | Pod, Deployment, Service |
+| 6 | cena-6 | Versão nova, sem queda | Híbrido       | Rolling update; ReplicaSet visível só aqui        | Pod, Deployment, Service |
+| 7 | cena-7 | A etiqueta que casa    | Pré-declarado | Labels visíveis; Service ↔ Pod via etiqueta; pod solto é anônimo | Pod, Deployment, Service |
+| 8 | cena-8 | A etiqueta certa       | Pré-declarado | Etiqueta é texto livre; selector errado = Service não enxerga pods | Pod, Deployment, Service (2 variantes) |
+
+### Modo de cena
+
+Classificação do que a vitória exige do jogador durante o runtime, e o
+que o jogo permite que ele faça:
+
+- **Reativo** — vitória depende de ação contínua durante a cena. Sem agir
+  em runtime, falha. É o modo "controller humano" — lição pedagógica
+  negativa: agir manualmente não escala.
+- **Híbrido** — configuração prévia + ação pontual durante a cena
+  (ex.: clicar 🚀 num momento específico).
+- **Pré-declarado** — configurou antes, vitória depende só disso. Pode
+  mexer depois mas não precisa. É o modo "K8s normal" — declare e o
+  controller cuida. O Desejado continua editável.
+- **Selado** — fase explícita de configuração com tempo definido, depois
+  o Desejado trava em read-only e o jogador só observa. Versão forte do
+  Pré-declarado: a constraint vem do jogo, não da escolha do jogador.
+  Implementa a mecânica `configure-then-watch` catalogada abaixo. Encarna
+  o paradigma declarativo como regra do jogo.
+
+Ordem do mais ao menos exigente em runtime:
+Reativo → Híbrido → Pré-declarado → Selado.
 
 A separação Cena 2 (Plantonista, só Pod) e Cena 3 (Bug intermitente, libera
 Deployment) é deliberada: o jogador *sente falta* do Deployment antes de
@@ -162,6 +186,100 @@ Footer com botões pra causar caos manual:
 
 Visível sempre, durante e fora de cena. Para uso em sala de aula (instrutor
 para o tempo pra explicar) ou exploração depois da cena.
+
+## Catálogo de mecânicas de jogo (gameficação)
+
+Inventário de recursos de game design já em uso no jogo, agrupados por
+função. Serve como kit de ferramentas: quando desenhar uma cena nova,
+puxar daqui em vez de inventar do zero. A seção `## Mecânicas` acima
+descreve **como** os subsistemas funcionam por dentro; esta seção descreve
+**o que** o jogo tem como vocabulário de design.
+
+### A. Loop central (estrutural)
+- **Duas zonas: Desejado ↔ Real** — manipulação só na esquerda; direita é
+  consequência. Conceito-mãe do jogo.
+- **Reconciler tick a cada 1s** — materializa peças do Desejado em Real.
+  Torna o modelo declarativo palpável.
+
+### B. Manipulação do jogador
+- **Drag-and-drop de chips** (Pod, Deployment, Service) da Palette pro Desejado.
+- **Stepper de replicas** no card do Deployment — ajusta N em tempo real.
+- **Clique-pra-matar pod no Real** (afordância extra).
+- **Botão 🚀 dentro do card do Deployment** — destravado por evento (cena 6).
+- **Remoção de peça do Desejado** (afordância de excluir).
+
+### C. Tempo
+- **Duração fixa por cena** (`durationMs`, 30–60s).
+- **Phases automatizadas** — narrativa muda em `startMs` específicos.
+- **Countdown pré-cena (5s)** — board interativo, contagem regressiva
+  sem fundo escuro. Permite pré-posicionar peças.
+- **Pause global** (instrutor).
+
+### D. Feedback visual
+- **Health bar dentro do pod** (carga atual em req/s).
+- **Capacity bars no node** (RAM/CPU usado vs total).
+- **Pending tray** (faixa amarela com pods sem onde caber).
+- **Partículas** (verde sucesso / vermelho falha) representando requests.
+- **Pulse animation no card de Deployment** quando reconciler age.
+- **Cor de versão** (v1 verde 🟢, v2 azul 🔵) — cena 6.
+- **Banner de ReplicaSet** (cena 6, opt-in via `showReplicaSets`).
+
+### E. Caos
+- **Eventos programados de cena** — `killRandomPod`, `killStickyPod`,
+  `killRandomNode`, `narrate`, `offerUpgrade`.
+- **Painel do instrutor** — mesmas ações + derrubar/reerguer node específico
+  + pausar + reset.
+- **Sticky pod determinístico** — força ensino do problema do IP volátil
+  (cena 4).
+
+### F. Narrativa / pedagógica
+- **Briefing pré-cena** (objetivo, loadDescription, chaosDescription, duração,
+  capacity).
+- **Painel de história lateral** — narrativa empilhada em log à esquerda.
+- **Narração em runtime** (eventos do tipo `narrate` durante a cena).
+- **Outro reflexivo** (survived/failed) com template
+  *"Você [não] previu... em K8s real..."*.
+- **Tutorial pré-cena** — 6 slides explicativos antes da cena 1, com botão "pular".
+
+### G. Vitória / derrota
+- **Vence:** uptime sustentado durante `durationMs`.
+- **Perde:** todos pods mortos por **5s consecutivos** (`GRACE_DOWN_MS` evita
+  falsos negativos durante transições).
+- **Capacity-aware:** pods sem espaço viram `Pending` (existem mas não atendem).
+  Não causa derrota direta — derrota vem do tráfego falhando.
+
+### H. Peças-como-conceitos (recursos K8s)
+- **Pod (one-shot)** — não é recriado quando morre. Lição negativa.
+- **Deployment (controller)** — recria automático, replicas ajustáveis.
+- **Service (singleton magnet)** — sem selector visível, auto-routing.
+- **Container resources** (parametriza peça) — `{ram, cpu}`, soma pro pod.
+- **Version + ReplicaSet** (cena 6) — habilita rolling update.
+
+### I. Progressão
+- **Cenas sequenciais** com `nextSceneId`.
+- **Status de cena** (`intro → countdown → running → survived/failed`).
+- **Availability de peças por cena** (`availablePieces`) — level-gating leve.
+- **Retry / Advance** explícitos no outro.
+
+### Mecânicas anotadas, ainda não em uso
+
+Ferramentas no kit, sem cena que use ainda:
+
+- **Configure-then-watch** — countdown longo + Desejado read-only durante
+  cena. Vira o paradigma declarativo em mecânica de jogo (declara antes,
+  sistema executa). Mata o hack do "declarar é grátis". Implementa o
+  modo de cena **Selado** descrito acima.
+- **HUD estilo Street Fighter** — duas barras coladas (timer + uptime),
+  leitura "vital" rápida.
+- **Partículas com peso** — light GET vs heavy POST consomem slots diferentes.
+- **Priority Class** — peça nova pra triagem em cluster saturado
+  (cenário Kobayashi Maru Versão B).
+- **Budget / custo visível** — penalizar declarar demais (anti-hack
+  do "declarar é grátis"). Pode ser $$$ ou "pods ociosos no HUD".
+- **Pré-declarar trigger** — *"quando X acontecer, faça Y"* sem clicar.
+  Substitui o botão 🚀 da cena 6 por declaração condicional.
+- **Labels e Selectors visíveis** — tornar a cola Service↔Pod explícita.
+  Possível cena 7 do tutorial.
 
 ## Arquitetura técnica
 
