@@ -9,13 +9,14 @@ const newResourceId = (prefix: string) => `${prefix}-${++resourceCounter}`;
 
 const GRACE_DOWN_MS = 5000;
 const RECONCILE_INTERVAL_MS = 1000;
+const COUNTDOWN_MS = 5000;
 
 let lastReconcileAt = 0;
 
 interface Actions {
   addStandalonePod: (containers: ContainerSpec[]) => void;
-  addDeployment: (replicas: number, template: PodSpec) => void;
-  addService: () => void;
+  addDeployment: (replicas: number, template: PodSpec, label?: string) => void;
+  addService: (selector?: string) => void;
   triggerUpgrade: (deploymentId: string) => void;
   removeDesired: (id: string) => void;
   setReplicas: (deploymentId: string, replicas: number) => void;
@@ -28,6 +29,7 @@ interface Actions {
   startScene: () => void;
   retryScene: () => void;
   advanceScene: () => void;
+  selectScene: (scenarioId: string) => void;
 
   nextTutorialStep: () => void;
   skipTutorial: () => void;
@@ -50,6 +52,7 @@ function freshState(scenarioId: string): GameState {
     scenarioId,
     sceneStatus: 'intro',
     sceneStartedAt: null,
+    countdownStartedAt: null,
     consecutiveDownSince: null,
     particles: [],
     nextRequestAt: 0,
@@ -77,9 +80,9 @@ export const useGame = create<GameState & Actions>((set, get) => ({
     });
   },
 
-  addDeployment: (replicas, template) => {
+  addDeployment: (replicas, template, label = 'app:web') => {
     const id = newResourceId('deploy');
-    const resource: DesiredResource = { id, kind: 'deployment', replicas, template, version: 'v1' };
+    const resource: DesiredResource = { id, kind: 'deployment', replicas, template, version: 'v1', label };
     set((s) => ({ ...s, desired: [...s.desired, resource] }));
   },
 
@@ -92,11 +95,11 @@ export const useGame = create<GameState & Actions>((set, get) => ({
     }));
   },
 
-  addService: () => {
+  addService: (selector = 'app:web') => {
     set((s) => {
       if (s.desired.some((r) => r.kind === 'service')) return s;
       const id = newResourceId('svc');
-      const resource: DesiredResource = { id, kind: 'service' };
+      const resource: DesiredResource = { id, kind: 'service', selector };
       return { ...s, desired: [...s.desired, resource] };
     });
   },
@@ -145,6 +148,18 @@ export const useGame = create<GameState & Actions>((set, get) => ({
     if (now - lastReconcileAt >= RECONCILE_INTERVAL_MS) {
       next = reconcile(next);
       lastReconcileAt = now;
+    }
+
+    if (next.sceneStatus === 'countdown' && next.countdownStartedAt !== null) {
+      if (now - next.countdownStartedAt >= COUNTDOWN_MS) {
+        next = {
+          ...next,
+          sceneStatus: 'running',
+          sceneStartedAt: now,
+          countdownStartedAt: null,
+          nextRequestAt: now,
+        };
+      }
     }
 
     if (scene && next.sceneStatus === 'running' && next.sceneStartedAt !== null) {
@@ -226,8 +241,9 @@ export const useGame = create<GameState & Actions>((set, get) => ({
   startScene: () => {
     set((s) => ({
       ...s,
-      sceneStatus: 'running',
-      sceneStartedAt: Date.now(),
+      sceneStatus: 'countdown',
+      sceneStartedAt: null,
+      countdownStartedAt: Date.now(),
       nextRequestAt: Date.now(),
       consecutiveDownSince: null,
       metrics: { totalReqs: 0, successReqs: 0, failedReqs: 0 },
@@ -251,6 +267,12 @@ export const useGame = create<GameState & Actions>((set, get) => ({
       if (!nextId) return s;
       return { ...freshState(nextId), tutorialStep: s.tutorialStep };
     });
+    lastReconcileAt = 0;
+  },
+
+  selectScene: (scenarioId: string) => {
+    if (!scenes[scenarioId]) return;
+    set((s) => ({ ...freshState(scenarioId), tutorialStep: s.tutorialStep }));
     lastReconcileAt = 0;
   },
 

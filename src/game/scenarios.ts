@@ -32,6 +32,8 @@ export interface Scene {
   nodeCapacity: Resources;
   nextSceneId: string | null;
   showReplicaSets?: boolean;
+  showLabels?: boolean;
+  serviceVariants?: string[];
 }
 
 export const scenes: Record<string, Scene> = {
@@ -207,9 +209,72 @@ export const scenes: Record<string, Scene> = {
     ],
     availablePieces: ['pod', 'deployment', 'service'],
     nodeCapacity: { ram: 4, cpu: 2 },
-    nextSceneId: null,
+    nextSceneId: 'cena-7',
     showReplicaSets: true,
+  },
+  'cena-7': {
+    id: 'cena-7',
+    title: 'A etiqueta que casa',
+    introNarrative:
+      'Você já usou Deployment e Service. Hoje você descobre o que faz um achar o outro. Olhe as peças com atenção — repare nas etiquetas.',
+    objective:
+      'Mantenha o site no ar. Use Deployment + Service. Repare em qual peça gera pods com etiqueta — Service só atende esses.',
+    loadDescription: 'Tráfego constante de 1.5 req/s',
+    chaosDescription: 'Sem imprevistos — descubra a etiqueta',
+    outroSurvived:
+      'Você descobriu a cola. Service e Deployment não se conhecem — nunca se referenciam. A etiqueta é o que faz o Service achar pods do Deployment, e ela só existe nos pods que vieram de um template. Pod solto é anônimo. Em K8s real, isso é label selector — texto arbitrário que você escolhe; aqui é fixo pra simplificar.',
+    outroFailed:
+      'Tráfego caiu. Provável: você tinha pod solto + Service. Pod solto não carrega etiqueta, então o Service o ignora — mesmo vivo, é invisível pra rede de roteamento. Use Deployment (que carimba etiqueta nos pods) e o Service vai achá-los.',
+    durationMs: 60_000,
+    phases: [
+      { startMs: 0, rps: 1.5, narrative: 'Tráfego começou. Repare nas etiquetas das peças.' },
+      { startMs: 30_000, rps: 1.5, narrative: 'Service só roteia pra quem tem etiqueta.' },
+    ],
+    events: [],
+    availablePieces: ['pod', 'deployment', 'service'],
+    nodeCapacity: { ram: 4, cpu: 2 },
+    nextSceneId: 'cena-8',
+    showLabels: true,
+  },
+  'cena-8': {
+    id: 'cena-8',
+    title: 'A etiqueta certa',
+    introNarrative:
+      'Em K8s, etiqueta é texto livre — você pode declarar app:loja, app:db, qualquer nome. Seu Deployment vem marcado como app:web. Olhe os Services disponíveis e escolha o que casa.',
+    objective:
+      'Mantenha o site no ar. Declare Deployment + Service. Existem duas variantes de Service na palette — só uma tem o selector certo.',
+    loadDescription: 'Tráfego constante de 1.5 req/s',
+    chaosDescription: 'Sem imprevistos — Service errado não enxerga seus pods',
+    outroSurvived:
+      'Você casou a etiqueta. Em K8s real, etiqueta é texto que VOCÊ escolhe — app:loja, tier:frontend, env:prod. O Service procura o que o selector dele especifica. Service e Deployment não se referenciam: a cola é só o texto da etiqueta combinar. Se mudar o texto de um lado, tem que mudar do outro.',
+    outroFailed:
+      'Tráfego caiu. Provável: você puxou o Service errado — selector dele não casa com a etiqueta do Deployment. Em K8s real, se o selector do Service for app:db mas seus pods são app:web, o Service literalmente não enxerga seus pods. Texto idêntico ou nada.',
+    durationMs: 60_000,
+    phases: [
+      { startMs: 0, rps: 1.5, narrative: 'Tráfego entrando. Qual Service casa com app:web?' },
+      { startMs: 30_000, rps: 1.5, narrative: 'Service errado é como ligar pro telefone errado: ninguém atende.' },
+    ],
+    events: [],
+    availablePieces: ['pod', 'deployment', 'service'],
+    nodeCapacity: { ram: 4, cpu: 2 },
+    nextSceneId: null,
+    showLabels: true,
+    serviceVariants: ['app:web', 'app:db'],
   },
 };
 
 export const FIRST_SCENE = 'cena-1';
+
+export interface Level {
+  id: string;
+  name: string;
+  scenes: string[];
+}
+
+export const LEVELS: Level[] = [
+  {
+    id: 'tutorial',
+    name: 'Tutorial',
+    scenes: ['cena-1', 'cena-2', 'cena-3', 'cena-4', 'cena-5', 'cena-6', 'cena-7', 'cena-8'],
+  },
+];

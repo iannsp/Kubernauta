@@ -27,13 +27,14 @@ export default function App() {
 
   const onDragEnd = (e: DragEndEvent) => {
     if (e.over?.id !== 'desired-drop') return;
-    const type = e.active.data.current?.type;
+    const data = e.active.data.current;
+    const type = data?.type;
     if (type === 'pod') {
       addStandalonePod([{ image: 'nginx', resources: { ...NGINX_RESOURCES } }]);
     } else if (type === 'deployment') {
-      addDeployment(3, { containers: [{ image: 'nginx', resources: { ...NGINX_RESOURCES } }] });
+      addDeployment(3, { containers: [{ image: 'nginx', resources: { ...NGINX_RESOURCES } }] }, data?.label);
     } else if (type === 'service') {
-      addService();
+      addService(data?.selector);
     }
   };
 

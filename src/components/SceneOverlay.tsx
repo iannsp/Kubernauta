@@ -1,18 +1,43 @@
+import { useEffect, useState } from 'react';
 import { useGame } from '../game/store';
 import { scenes } from '../game/scenarios';
+
+const COUNTDOWN_TOTAL_MS = 5000;
+
+function Countdown({ startedAt }: { startedAt: number }) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 100);
+    return () => clearInterval(id);
+  }, []);
+  const remaining = Math.max(0, COUNTDOWN_TOTAL_MS - (now - startedAt));
+  const secondsLeft = Math.ceil(remaining / 1000);
+  return (
+    <div className="countdown-overlay">
+      <div key={secondsLeft} className="countdown-number">
+        {secondsLeft}
+      </div>
+      <div className="countdown-hint">posicione suas peças</div>
+    </div>
+  );
+}
 
 export default function SceneOverlay() {
   const sceneStatus = useGame((s) => s.sceneStatus);
   const scenarioId = useGame((s) => s.scenarioId);
   const tutorialStep = useGame((s) => s.tutorialStep);
+  const countdownStartedAt = useGame((s) => s.countdownStartedAt);
   const startScene = useGame((s) => s.startScene);
   const retryScene = useGame((s) => s.retryScene);
   const advanceScene = useGame((s) => s.advanceScene);
 
   const scene = scenes[scenarioId];
 
-  if (sceneStatus === 'running') return null;
   if (tutorialStep !== null) return null;
+  if (sceneStatus === 'countdown' && countdownStartedAt !== null) {
+    return <Countdown startedAt={countdownStartedAt} />;
+  }
+  if (sceneStatus === 'running') return null;
 
   if (sceneStatus === 'intro') {
     return (

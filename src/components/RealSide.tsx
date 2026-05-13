@@ -23,8 +23,9 @@ function freeOnNode(node: RealNode, pods: RealPod[]) {
   };
 }
 
-function PodCircle({ pod, onKill }: { pod: RealPod; onKill: () => void }) {
+function PodCircle({ pod, onKill, showLabels }: { pod: RealPod; onKill: () => void; showLabels: boolean }) {
   const load = Math.min(1, pod.hitTimes.length / POD_CAPACITY);
+  const labelText = pod.label ?? '—';
   return (
     <motion.div
       key={pod.id}
@@ -33,12 +34,21 @@ function PodCircle({ pod, onKill }: { pod: RealPod; onKill: () => void }) {
       animate={{ scale: 1, opacity: 1 }}
       exit={{ scale: 0, opacity: 0 }}
       transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-      className={`real-pod pod-${pod.version}`}
-      title={`clique para matar (${pod.version})`}
-      onClick={onKill}
+      className="real-pod-wrap"
     >
-      <div className="real-pod-fill" style={{ height: `${load * 100}%` }} />
-      <span className="real-pod-emoji">{pod.version === 'v2' ? '🔵' : '🟢'}</span>
+      <div
+        className={`real-pod pod-${pod.version}`}
+        title={`clique para matar (${pod.version})${showLabels ? ` · etiqueta: ${labelText}` : ''}`}
+        onClick={onKill}
+      >
+        <div className="real-pod-fill" style={{ height: `${load * 100}%` }} />
+        <span className="real-pod-emoji">{pod.version === 'v2' ? '🔵' : '🟢'}</span>
+      </div>
+      {showLabels && (
+        <span className={`real-pod-tag ${pod.label === null ? 'empty' : ''} mono`}>
+          {pod.label === null ? 'sem 🏷' : `🏷 ${pod.label}`}
+        </span>
+      )}
     </motion.div>
   );
 }
@@ -49,6 +59,7 @@ export default function RealSide() {
   const killPod = useGame((s) => s.killPod);
   const scenarioId = useGame((s) => s.scenarioId);
   const showReplicaSets = scenes[scenarioId]?.showReplicaSets;
+  const showLabels = !!scenes[scenarioId]?.showLabels;
 
   const pendingPods = pods.filter((p) => p.status === 'pending');
 
@@ -121,7 +132,7 @@ export default function RealSide() {
                 <div className="node-pods">
                   <AnimatePresence>
                     {nodePods.map((p) => (
-                      <PodCircle key={p.id} pod={p} onKill={() => killPod(p.id)} />
+                      <PodCircle key={p.id} pod={p} onKill={() => killPod(p.id)} showLabels={showLabels} />
                     ))}
                   </AnimatePresence>
                 </div>

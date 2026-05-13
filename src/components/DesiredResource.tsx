@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import type { DesiredResource as DR } from '../game/types';
+import type { DesiredResource as DR, DesiredService } from '../game/types';
 import { podResourceSum } from '../game/types';
 import { useGame } from '../game/store';
+import { scenes } from '../game/scenarios';
 
 function ResourceBadge({ ram, cpu }: { ram: number; cpu: number }) {
   return (
@@ -11,21 +12,39 @@ function ResourceBadge({ ram, cpu }: { ram: number; cpu: number }) {
   );
 }
 
-function ServiceCard({ id }: { id: string }) {
+function LabelBadge({ value }: { value: string | null }) {
+  if (value === null) {
+    return <span className="label-badge empty mono" title="sem etiqueta">🏷 sem etiqueta</span>;
+  }
+  return <span className="label-badge mono" title="etiqueta">🏷 {value}</span>;
+}
+
+function ServiceCard({ svc }: { svc: DesiredService }) {
   const remove = useGame((s) => s.removeDesired);
+  const scenarioId = useGame((s) => s.scenarioId);
+  const showLabels = scenes[scenarioId]?.showLabels;
   const connectedCount = useGame(
-    (s) => s.pods.filter((p) => p.status === 'running' && p.nodeId !== null).length
+    (s) => s.pods.filter((p) => {
+      if (p.status !== 'running' || p.nodeId === null) return false;
+      if (!showLabels) return true;
+      return p.label === svc.selector;
+    }).length
   );
   return (
     <div className="resource service-card">
       <div className="resource-header">
         <span>🧲 Service</span>
         <div className="controls">
-          <span className="resource-badge mono">→ {connectedCount} pod{connectedCount !== 1 ? 's' : ''}</span>
-          <button onClick={() => remove(id)} title="remover">×</button>
+          {showLabels && <LabelBadge value={`→ ${svc.selector}`} />}
+          <span className="resource-badge mono">{connectedCount} pod{connectedCount !== 1 ? 's' : ''}</span>
+          <button onClick={() => remove(svc.id)} title="remover">×</button>
         </div>
       </div>
-      <div className="service-hint">endereço estável: roteia pra qualquer pod vivo</div>
+      <div className="service-hint">
+        {showLabels
+          ? `procura pods com etiqueta ${svc.selector}`
+          : 'endereço estável: roteia pra qualquer pod vivo'}
+      </div>
     </div>
   );
 }
@@ -35,6 +54,8 @@ export default function DesiredResource({ resource }: { resource: DR }) {
   const setReplicas = useGame((s) => s.setReplicas);
   const triggerUpgrade = useGame((s) => s.triggerUpgrade);
   const upgradeOffered = useGame((s) => s.upgradeOffered);
+  const scenarioId = useGame((s) => s.scenarioId);
+  const showLabels = scenes[scenarioId]?.showLabels;
   const podCountForDeployment = useGame((s) =>
     resource.kind === 'deployment'
       ? s.pods.filter((p) => p.desiredKind === 'deployment' && p.desiredId === resource.id).length
@@ -60,6 +81,7 @@ export default function DesiredResource({ resource }: { resource: DR }) {
         <div className="resource-header">
           <span>📦 Pod</span>
           <div className="controls">
+            {showLabels && <LabelBadge value={null} />}
             <ResourceBadge ram={r.ram} cpu={r.cpu} />
             <button onClick={() => remove(resource.id)} title="remover">×</button>
           </div>
@@ -70,7 +92,7 @@ export default function DesiredResource({ resource }: { resource: DR }) {
   }
 
   if (resource.kind === 'service') {
-    return <ServiceCard id={resource.id} />;
+    return <ServiceCard svc={resource} />;
   }
 
   const r = podResourceSum(resource.template);
@@ -81,6 +103,7 @@ export default function DesiredResource({ resource }: { resource: DR }) {
       <div className="resource-header">
         <span>
           📋 Deployment <span className="version-tag mono">{resource.version}</span>
+          {showLabels && <> <LabelBadge value={resource.label} /></>}
         </span>
         <div className="controls">
           <button onClick={() => setReplicas(resource.id, resource.replicas - 1)} title="menos">−</button>

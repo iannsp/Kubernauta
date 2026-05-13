@@ -27,7 +27,9 @@ export function processTraffic(state: GameState, scene: Scene, now: number): Gam
   let nextAt = state.nextRequestAt;
   let stickyId = state.stickyTargetPodId;
 
-  const hasService = state.desired.some((r) => r.kind === 'service');
+  const service = state.desired.find((r) => r.kind === 'service');
+  const hasService = service !== undefined;
+  const selector = service && 'selector' in service ? service.selector : null;
 
   if (rps > 0) {
     const intervalMs = 1000 / rps;
@@ -42,8 +44,11 @@ export function processTraffic(state: GameState, scene: Scene, now: number): Gam
       let target = undefined as typeof runningPods[number] | undefined;
 
       if (hasService) {
-        if (runningPods.length > 0) {
-          target = runningPods[Math.floor(Math.random() * runningPods.length)];
+        const eligible = scene.showLabels
+          ? runningPods.filter((p) => p.label === selector)
+          : runningPods;
+        if (eligible.length > 0) {
+          target = eligible[Math.floor(Math.random() * eligible.length)];
         }
       } else {
         if (stickyId === null && runningPods.length > 0) {

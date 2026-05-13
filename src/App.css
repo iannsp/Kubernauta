@@ -41,6 +41,100 @@
 }
 .hud-value.warn { color: var(--red); }
 
+.hud-title {
+  position: relative;
+}
+.scene-title-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 2px 8px 2px 0;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+.scene-title-btn:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+.scene-title-btn .hud-value {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.dropdown-caret {
+  font-size: 10px;
+  color: var(--muted);
+  margin-left: 6px;
+}
+.scene-selector-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+}
+.scene-selector {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 151;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+  min-width: 320px;
+  padding: 6px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+.scene-selector-group-header {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  padding: 8px 10px 4px;
+}
+.scene-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: var(--text);
+}
+.scene-item:hover {
+  background: rgba(0, 122, 255, 0.08);
+}
+.scene-item.current {
+  background: rgba(0, 122, 255, 0.12);
+}
+.scene-item-num {
+  font-size: 11px;
+  color: var(--muted);
+  min-width: 16px;
+  text-align: right;
+}
+.scene-item-title {
+  flex: 1;
+  font-size: 13px;
+}
+.scene-item-tag {
+  font-size: 10px;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
 /* ───── Main row: history + board ───── */
 
 .main-row {
@@ -347,6 +441,39 @@
   font-size: 11px;
   color: var(--muted);
   font-weight: 400;
+}
+.label-badge {
+  font-size: 11px;
+  background: rgba(0, 122, 255, 0.12);
+  color: var(--accent);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+.label-badge.empty {
+  background: rgba(180, 180, 180, 0.15);
+  color: var(--muted);
+  font-style: italic;
+  font-weight: 400;
+}
+.real-pod-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.real-pod-tag {
+  font-size: 9px;
+  background: rgba(0, 122, 255, 0.85);
+  color: white;
+  padding: 1px 4px;
+  border-radius: 3px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.real-pod-tag.empty {
+  background: rgba(120, 120, 120, 0.7);
+  font-style: italic;
 }
 
 /* ───── Real side ───── */
@@ -665,6 +792,45 @@
 }
 .overlay-primary:hover {
   filter: brightness(1.05);
+}
+
+/* ───── Countdown (entre intro e running) ───── */
+
+.countdown-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  z-index: 90;
+  pointer-events: none;
+}
+.countdown-number {
+  font-size: 180px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  animation: countdown-pop 1s ease-out;
+}
+.countdown-hint {
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text);
+  background: rgba(28, 33, 40, 0.75);
+  padding: 6px 14px;
+  border-radius: 999px;
+  backdrop-filter: blur(4px);
+}
+@keyframes countdown-pop {
+  0%   { transform: scale(1.6); opacity: 0; }
+  20%  { transform: scale(1.0); opacity: 1; }
+  100% { transform: scale(1.0); opacity: 1; }
 }
 
 /* ───── Tutorial ───── */

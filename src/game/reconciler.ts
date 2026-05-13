@@ -41,7 +41,8 @@ function newPod(
   spec: PodSpec,
   node: RealNode | undefined,
   version: AppVersion,
-  replicaSetId: string
+  replicaSetId: string,
+  label: string | null
 ): RealPod {
   return {
     id: newPodId(),
@@ -53,6 +54,7 @@ function newPod(
     hitTimes: [],
     version,
     replicaSetId,
+    label,
   };
 }
 
@@ -82,7 +84,7 @@ export function reconcile(state: GameState): GameState {
         for (let i = 0; i < diff; i++) {
           const node = scheduleNode(state.nodes, pods, need);
           const rsId = `rs-${targetVersion}-${deployment.id}`;
-          pods = [...pods, newPod(deployment.id, 'deployment', deployment.template, node, targetVersion, rsId)];
+          pods = [...pods, newPod(deployment.id, 'deployment', deployment.template, node, targetVersion, rsId, deployment.label)];
         }
       } else if (diff < 0) {
         const toKill = -diff;
@@ -95,7 +97,7 @@ export function reconcile(state: GameState): GameState {
       if (currentVersion.length < targetReplicas && total < targetReplicas + MAX_SURGE) {
         const node = scheduleNode(state.nodes, pods, need);
         const rsId = `rs-${targetVersion}-${deployment.id}`;
-        pods = [...pods, newPod(deployment.id, 'deployment', deployment.template, node, targetVersion, rsId)];
+        pods = [...pods, newPod(deployment.id, 'deployment', deployment.template, node, targetVersion, rsId, deployment.label)];
       } else if (oldVersion.length > 0 && (currentVersion.length >= targetReplicas || total >= targetReplicas + MAX_SURGE)) {
         const victim = oldVersion[0];
         pods = pods.filter((p) => p.id !== victim.id);
@@ -118,5 +120,5 @@ export function reconcile(state: GameState): GameState {
 export function manifestStandalonePod(state: GameState, desiredId: string, spec: PodSpec): GameState {
   const node = scheduleNode(state.nodes, state.pods, podResourceSum(spec));
   const rsId = `bare-${desiredId}`;
-  return { ...state, pods: [...state.pods, newPod(desiredId, 'pod', spec, node, 'v1', rsId)] };
+  return { ...state, pods: [...state.pods, newPod(desiredId, 'pod', spec, node, 'v1', rsId, null)] };
 }

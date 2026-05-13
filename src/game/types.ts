@@ -28,11 +28,13 @@ export interface DesiredDeployment {
   replicas: number;
   template: PodSpec;
   version: AppVersion;
+  label: string;
 }
 
 export interface DesiredService {
   id: string;
   kind: 'service';
+  selector: string;
 }
 
 export type DesiredResource = DesiredPod | DesiredDeployment | DesiredService;
@@ -49,6 +51,7 @@ export interface RealPod {
   hitTimes: number[];
   version: AppVersion;
   replicaSetId: string;
+  label: string | null;
 }
 
 export interface RealNode {
@@ -70,7 +73,7 @@ export interface Metrics {
   failedReqs: number;
 }
 
-export type SceneStatus = 'intro' | 'running' | 'survived' | 'failed';
+export type SceneStatus = 'intro' | 'countdown' | 'running' | 'survived' | 'failed';
 
 export interface GameState {
   desired: DesiredResource[];
@@ -80,6 +83,7 @@ export interface GameState {
   scenarioId: string;
   sceneStatus: SceneStatus;
   sceneStartedAt: number | null;
+  countdownStartedAt: number | null;
   consecutiveDownSince: number | null;
   particles: Particle[];
   nextRequestAt: number;
