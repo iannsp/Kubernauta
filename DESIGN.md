@@ -78,6 +78,7 @@ Estado atual (HEAD `e879e72`):
 | 6 | cena-6 | Versão nova, sem queda | Híbrido       | Rolling update; ReplicaSet visível só aqui        | Pod, Deployment, Service |
 | 7 | cena-7 | A etiqueta que casa    | Pré-declarado | Labels visíveis; Service ↔ Pod via etiqueta; pod solto é anônimo | Pod, Deployment, Service |
 | 8 | cena-8 | A etiqueta certa       | Pré-declarado | Etiqueta é texto livre; selector errado = Service não enxerga pods | Pod, Deployment, Service (2 variantes) |
+| 9 | cena-9 | Mais gente do que eu esperava | Pré-declarado | Pod tem capacidade (5 req/s); replicas escalam capacidade; preview de HPA | Pod, Deployment, Service |
 
 ### Modo de cena
 
@@ -125,11 +126,29 @@ Loop que roda a cada 1000ms:
 ### Traffic sim
 
 Loop que roda a cada 100ms, gera requests baseado na fase atual (rps):
-- Cada request escolhe um pod random `running` de qualquer node vivo
-  (modelo K8s: rede plana, cluster decide).
+- **Com Service no Desejado:** request escolhe um pod random `running`
+  elegível pelo selector (quando `scene.showLabels`, filtra por
+  `pod.label === service.selector`; caso contrário qualquer pod running).
+  Modelo K8s: Service é load balancer com pool de endpoints.
+- **Sem Service no Desejado:** comportamento "sticky" — o primeiro pod
+  escolhido vira `stickyTargetPodId`, e todo tráfego daí pra frente vai
+  só pra esse pod. Modelo K8s: cliente conhece UM IP (do pod específico),
+  sem indireção via Service. Se o pod sticky some (morre, removido pelo
+  jogador), `stickyTargetPodId` é invalidado em `removeDesired` (ações
+  do jogador) mas mantido em kills programados (eventos da cena) — é
+  como a cena 4 ensina que "sem Service, pod morto = silêncio".
 - Pod tem capacidade 5 req/s. Acima disso, requests caem (vermelho).
 - Particula visual: sai do topo central, voa pra coluna do node-alvo.
 - Métricas: totalReqs, successReqs, failedReqs.
+- Janela móvel `recentReqs` (10s) alimenta o HUD e o critério
+  `failBelowUptime` da cena.
+
+**Consequência prática na cena 9 (escala):** sem Service, o sticky tranca
+todo o tráfego em UM pod só. Mesmo com Deployment ×3, o cluster atende
+no máximo 5 req/s (a capacidade de um pod) — os outros 2 ficam ociosos.
+Pra escalar capacidade, Service distribuindo é obrigatório. É o cruzamento
+das lições: cena 4 (Service como indireção) + cena 9 (replicas escalam,
+mas só com Service distribuindo).
 
 ### Capacity (RAM + CPU)
 
