@@ -150,7 +150,7 @@ export const useGame = create<GameState & Actions>((set, get) => ({
     if (s.paused) return;
     const now = Date.now();
 
-    let next = s;
+    let next: GameState = s;
     const scene: Scene | undefined = scenes[next.scenarioId];
 
     if (now - lastReconcileAt >= RECONCILE_INTERVAL_MS) {
@@ -226,7 +226,7 @@ export const useGame = create<GameState & Actions>((set, get) => ({
       next = processTraffic(next, scene, now);
 
       const aliveNodeIds = new Set(next.nodes.filter((n) => n.status === 'alive').map((n) => n.id));
-      const alivePods = next.pods.filter((p) => aliveNodeIds.has(p.nodeId));
+      const alivePods = next.pods.filter((p) => p.nodeId !== null && aliveNodeIds.has(p.nodeId));
       const warmupOver = elapsed > 1000;
       if (alivePods.length === 0 && warmupOver) {
         if (next.consecutiveDownSince === null) {
