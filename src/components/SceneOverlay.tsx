@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useGame } from '../game/store';
 import { scenes } from '../game/scenarios';
+import { track } from '../lib/track';
 
 const COUNTDOWN_TOTAL_MS = 5000;
 
@@ -32,6 +33,19 @@ export default function SceneOverlay() {
   const advanceScene = useGame((s) => s.advanceScene);
 
   const scene = scenes[scenarioId];
+
+  const lastEndedKey = useRef<string | null>(null);
+  useEffect(() => {
+    if (sceneStatus !== 'survived' && sceneStatus !== 'failed') return;
+    const key = `${scenarioId}:${sceneStatus}`;
+    if (lastEndedKey.current === key) return;
+    lastEndedKey.current = key;
+    track('scene_ended', {
+      scene_id: scenarioId,
+      scene_title: scene?.title,
+      outcome: sceneStatus,
+    });
+  }, [sceneStatus, scenarioId, scene?.title]);
 
   if (tutorialStep !== null) return null;
   if (sceneStatus === 'countdown' && countdownStartedAt !== null) {

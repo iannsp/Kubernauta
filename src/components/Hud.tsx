@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useGame } from '../game/store';
 import { scenes, LEVELS } from '../game/scenarios';
+import { track } from '../lib/track';
 
 function formatTime(ms: number): string {
   const s = Math.max(0, Math.floor(ms / 1000));
@@ -59,6 +60,7 @@ export default function Hud() {
                         key={id}
                         className={`scene-item ${isCurrent ? 'current' : ''}`}
                         onClick={() => {
+                          track('scene_selected', { scene_id: id, scene_title: s.title });
                           selectScene(id);
                           setSelectorOpen(false);
                         }}

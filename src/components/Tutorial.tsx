@@ -1,5 +1,7 @@
+import { useEffect } from 'react';
 import { useGame } from '../game/store';
 import { TUTORIAL_TOTAL_STEPS } from '../game/store';
+import { track } from '../lib/track';
 
 interface Slide {
   title: string;
@@ -165,11 +167,27 @@ export default function Tutorial() {
   const next = useGame((s) => s.nextTutorialStep);
   const skip = useGame((s) => s.skipTutorial);
 
+  useEffect(() => {
+    if (tutorialStep === null) return;
+    const slide = slides[tutorialStep];
+    if (!slide) return;
+    track('tutorial_step_viewed', {
+      step: tutorialStep + 1,
+      total: TUTORIAL_TOTAL_STEPS,
+      title: slide.title,
+    });
+  }, [tutorialStep]);
+
   if (tutorialStep === null) return null;
   const slide = slides[tutorialStep];
   if (!slide) return null;
 
   const isLast = tutorialStep === TUTORIAL_TOTAL_STEPS - 1;
+
+  const handleSkip = () => {
+    track('tutorial_skipped', { from_step: tutorialStep + 1 });
+    skip();
+  };
 
   return (
     <div className="overlay tutorial-overlay">
@@ -178,7 +196,7 @@ export default function Tutorial() {
           <span className="tutorial-step">
             Tutorial {tutorialStep + 1} / {TUTORIAL_TOTAL_STEPS}
           </span>
-          <button className="tutorial-skip" onClick={skip}>
+          <button className="tutorial-skip" onClick={handleSkip}>
             pular tutorial
           </button>
         </div>
