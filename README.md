@@ -2,6 +2,8 @@
 
 > Um jogo para aprender Kubernetes uma camada por vez — do encaixe visual à configuração real.
 
+**Jogue:** <https://iannsp.github.io/Kubernauta/>
+
 Serious game de browser para treinamento em Kubernetes. Você arrasta peças (Pod, Deployment, Service...) para declarar o estado desejado e observa o cluster reconciliar a realidade. Cada cena introduz um conceito quando ele faz falta, sempre fazendo o jogador viver o problema antes de receber a solução.
 
 ## Como rodar
