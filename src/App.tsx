@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { DndContext, type DragEndEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { useGame } from './game/store';
 import { NGINX_RESOURCES } from './game/types';
@@ -7,12 +7,14 @@ import InstructorPanel from './components/InstructorPanel';
 import HistoryPanel from './components/HistoryPanel';
 import Hud from './components/Hud';
 import SceneOverlay from './components/SceneOverlay';
+import Splash from './components/Splash';
 import Tutorial from './components/Tutorial';
 import './App.css';
 
 const TICK_MS = 100;
 
 export default function App() {
+  const [splashOpen, setSplashOpen] = useState(true);
   const tick = useGame((s) => s.tick);
   const addStandalonePod = useGame((s) => s.addStandalonePod);
   const addDeployment = useGame((s) => s.addDeployment);
@@ -49,6 +51,7 @@ export default function App() {
         <InstructorPanel />
         <SceneOverlay />
         <Tutorial />
+        {splashOpen && <Splash onClose={() => setSplashOpen(false)} />}
       </div>
     </DndContext>
   );

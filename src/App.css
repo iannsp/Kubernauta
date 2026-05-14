@@ -1005,3 +1005,42 @@
   background: rgba(0, 122, 255, 0.05);
   color: var(--accent);
 }
+
+/* ───── Splash ───── */
+
+.splash-overlay {
+  position: fixed;
+  inset: 0;
+  background: #050510;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 24px;
+  cursor: pointer;
+}
+.splash-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  max-width: 90vw;
+  cursor: default;
+}
+.splash-img {
+  max-width: 100%;
+  max-height: 72vh;
+  object-fit: contain;
+  border-radius: 14px;
+  box-shadow: 0 0 80px rgba(120, 80, 220, 0.35);
+}
+.splash-signature {
+  color: #b8a8e8;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  font-style: italic;
+  opacity: 0.85;
+}
+.splash-cta {
+  max-width: 260px;
+}
