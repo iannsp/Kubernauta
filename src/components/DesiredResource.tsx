@@ -3,6 +3,7 @@ import type { DesiredResource as DR, DesiredService } from '../game/types';
 import { podResourceSum } from '../game/types';
 import { useGame } from '../game/store';
 import { scenes } from '../game/scenarios';
+import { track } from '../lib/track';
 
 function ResourceBadge({ ram, cpu }: { ram: number; cpu: number }) {
   return (
@@ -37,7 +38,13 @@ function ServiceCard({ svc }: { svc: DesiredService }) {
         <div className="controls">
           {showLabels && <LabelBadge value={`→ ${svc.selector}`} />}
           <span className="resource-badge mono">{connectedCount} pod{connectedCount !== 1 ? 's' : ''}</span>
-          <button onClick={() => remove(svc.id)} title="remover">×</button>
+          <button
+            onClick={() => {
+              track('piece_removed', { kind: 'service' });
+              remove(svc.id);
+            }}
+            title="remover"
+          >×</button>
         </div>
       </div>
       <div className="service-hint">
@@ -83,7 +90,13 @@ export default function DesiredResource({ resource }: { resource: DR }) {
           <div className="controls">
             {showLabels && <LabelBadge value={null} />}
             <ResourceBadge ram={r.ram} cpu={r.cpu} />
-            <button onClick={() => remove(resource.id)} title="remover">×</button>
+            <button
+              onClick={() => {
+                track('piece_removed', { kind: 'pod' });
+                remove(resource.id);
+              }}
+              title="remover"
+            >×</button>
           </div>
         </div>
         <div className="container-card">🟢 nginx</div>
@@ -106,14 +119,38 @@ export default function DesiredResource({ resource }: { resource: DR }) {
           {showLabels && <> <LabelBadge value={resource.label} /></>}
         </span>
         <div className="controls">
-          <button onClick={() => setReplicas(resource.id, resource.replicas - 1)} title="menos">−</button>
+          <button
+            onClick={() => {
+              track('replicas_changed', { delta: -1, to: resource.replicas - 1 });
+              setReplicas(resource.id, resource.replicas - 1);
+            }}
+            title="menos"
+          >−</button>
           <span className="replicas">×{resource.replicas}</span>
-          <button onClick={() => setReplicas(resource.id, resource.replicas + 1)} title="mais">+</button>
-          <button onClick={() => remove(resource.id)} title="remover">×</button>
+          <button
+            onClick={() => {
+              track('replicas_changed', { delta: +1, to: resource.replicas + 1 });
+              setReplicas(resource.id, resource.replicas + 1);
+            }}
+            title="mais"
+          >+</button>
+          <button
+            onClick={() => {
+              track('piece_removed', { kind: 'deployment' });
+              remove(resource.id);
+            }}
+            title="remover"
+          >×</button>
         </div>
       </div>
       {canUpgrade && (
-        <button className="upgrade-btn" onClick={() => triggerUpgrade(resource.id)}>
+        <button
+          className="upgrade-btn"
+          onClick={() => {
+            track('upgrade_triggered');
+            triggerUpgrade(resource.id);
+          }}
+        >
           🚀 atualizar v1 → v2
         </button>
       )}

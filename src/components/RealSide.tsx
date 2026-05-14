@@ -3,6 +3,7 @@ import { useGame } from '../game/store';
 import { podResourceSum, type RealNode, type RealPod } from '../game/types';
 import { POD_CAPACITY } from '../game/traffic';
 import { scenes } from '../game/scenarios';
+import { track } from '../lib/track';
 import Particles from './Particles';
 
 function freeOnNode(node: RealNode, pods: RealPod[]) {
@@ -132,7 +133,15 @@ export default function RealSide() {
                 <div className="node-pods">
                   <AnimatePresence>
                     {nodePods.map((p) => (
-                      <PodCircle key={p.id} pod={p} onKill={() => killPod(p.id)} showLabels={showLabels} />
+                      <PodCircle
+                        key={p.id}
+                        pod={p}
+                        onKill={() => {
+                          track('pod_killed_player', { pod_version: p.version });
+                          killPod(p.id);
+                        }}
+                        showLabels={showLabels}
+                      />
                     ))}
                   </AnimatePresence>
                 </div>

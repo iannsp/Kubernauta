@@ -83,7 +83,13 @@ export default function SceneOverlay() {
               <span className="mono">{scene.durationMs / 1000}s</span>
             </div>
           </div>
-          <button className="overlay-primary" onClick={startScene}>
+          <button
+            className="overlay-primary"
+            onClick={() => {
+              track('scene_started', { scene_id: scenarioId, scene_title: scene?.title });
+              startScene();
+            }}
+          >
             Começar
           </button>
         </div>
@@ -99,7 +105,13 @@ export default function SceneOverlay() {
           <h2>{scene.title}</h2>
           <p className="overlay-narrative">{scene.outroSurvived}</p>
           {scene.nextSceneId ? (
-            <button className="overlay-primary" onClick={advanceScene}>
+            <button
+              className="overlay-primary"
+              onClick={() => {
+                track('scene_advance', { from_scene_id: scenarioId });
+                advanceScene();
+              }}
+            >
               Próxima cena →
             </button>
           ) : (
@@ -107,7 +119,13 @@ export default function SceneOverlay() {
               <p className="overlay-narrative" style={{ marginTop: 16 }}>
                 Fim do MVP. Mais cenas em breve.
               </p>
-              <button className="overlay-primary" onClick={retryScene}>
+              <button
+                className="overlay-primary"
+                onClick={() => {
+                  track('scene_retry', { scene_id: scenarioId, outcome: 'survived' });
+                  retryScene();
+                }}
+              >
                 Jogar de novo
               </button>
             </>
@@ -123,7 +141,13 @@ export default function SceneOverlay() {
         <div className="overlay-label">não sobreviveu</div>
         <h2>{scene.title}</h2>
         <p className="overlay-narrative">{scene.outroFailed}</p>
-        <button className="overlay-primary" onClick={retryScene}>
+        <button
+          className="overlay-primary"
+          onClick={() => {
+            track('scene_retry', { scene_id: scenarioId, outcome: 'failed' });
+            retryScene();
+          }}
+        >
           Tentar de novo
         </button>
       </div>

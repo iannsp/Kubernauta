@@ -189,6 +189,11 @@ export default function Tutorial() {
     skip();
   };
 
+  const handleNext = () => {
+    if (isLast) track('tutorial_completed');
+    next();
+  };
+
   return (
     <div className="overlay tutorial-overlay">
       <div className="tutorial-card">
@@ -203,7 +208,7 @@ export default function Tutorial() {
         <h2>{slide.title}</h2>
         <div className="tutorial-body">{slide.body}</div>
         {slide.diagram && <div className="tutorial-diagram-wrap">{slide.diagram}</div>}
-        <button className="overlay-primary" onClick={next}>
+        <button className="overlay-primary" onClick={handleNext}>
           {isLast ? 'Pronto — ver Cena 1 →' : 'Próximo →'}
         </button>
       </div>

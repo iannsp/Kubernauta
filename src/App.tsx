@@ -9,6 +9,7 @@ import Hud from './components/Hud';
 import SceneOverlay from './components/SceneOverlay';
 import Splash from './components/Splash';
 import Tutorial from './components/Tutorial';
+import { track } from './lib/track';
 import './App.css';
 
 const TICK_MS = 100;
@@ -32,10 +33,13 @@ export default function App() {
     const data = e.active.data.current;
     const type = data?.type;
     if (type === 'pod') {
+      track('piece_dropped', { kind: 'pod' });
       addStandalonePod([{ image: 'nginx', resources: { ...NGINX_RESOURCES } }]);
     } else if (type === 'deployment') {
+      track('piece_dropped', { kind: 'deployment' });
       addDeployment(3, { containers: [{ image: 'nginx', resources: { ...NGINX_RESOURCES } }] }, data?.label);
     } else if (type === 'service') {
+      track('piece_dropped', { kind: 'service', selector: data?.selector });
       addService(data?.selector);
     }
   };
