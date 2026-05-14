@@ -73,6 +73,11 @@ export interface Metrics {
   failedReqs: number;
 }
 
+export interface RecentReq {
+  at: number;
+  ok: boolean;
+}
+
 export type SceneStatus = 'intro' | 'countdown' | 'running' | 'survived' | 'failed';
 
 export interface GameState {
@@ -88,6 +93,8 @@ export interface GameState {
   particles: Particle[];
   nextRequestAt: number;
   metrics: Metrics;
+  recentReqs: RecentReq[];
+  consecutiveLowUptimeSince: number | null;
   narrativeLog: string[];
   lastPhaseLogged: number;
   firedEvents: number[];

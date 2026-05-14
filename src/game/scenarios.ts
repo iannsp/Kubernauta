@@ -34,6 +34,7 @@ export interface Scene {
   showReplicaSets?: boolean;
   showLabels?: boolean;
   serviceVariants?: string[];
+  failBelowUptime?: number;
 }
 
 export const scenes: Record<string, Scene> = {
@@ -257,9 +258,35 @@ export const scenes: Record<string, Scene> = {
     events: [],
     availablePieces: ['pod', 'deployment', 'service'],
     nodeCapacity: { ram: 4, cpu: 2 },
-    nextSceneId: null,
+    nextSceneId: 'cena-9',
     showLabels: true,
     serviceVariants: ['app:web', 'app:db'],
+  },
+  'cena-9': {
+    id: 'cena-9',
+    title: 'Mais gente do que eu esperava',
+    introNarrative:
+      'Cada pod aguenta 5 requisições por segundo. O tráfego vai subir em fases — de 2 a 15 req/s. Faça a conta antes de declarar.',
+    objective:
+      'Mantenha 100% de uptime mesmo na fase mais pesada. Replicas = capacidade — quantas você precisa?',
+    loadDescription: 'Tráfego cresce em 3 fases: 2 → 8 → 15 req/s. Cada pod aguenta 5 req/s.',
+    chaosDescription: 'Sem imprevistos — a carga é o problema',
+    outroSurvived:
+      'Você fez a conta. Pra 15 req/s, com pods aguentando 5 cada, precisa ≥ 3 réplicas. Adicionar pods = adicionar capacidade — isso é Horizontal Scaling. Em K8s real, um HPA (Horizontal Pod Autoscaler) faz essa conta sozinho: monitora carga, ajusta replicas. Você acabou de fazer o trabalho do HPA na unha.',
+    outroFailed:
+      'Pods saturaram (5 req/s cada é o teto) e requests caíram. Em produção: aumente replicas — ou deixe o HPA fazer por você. Você subestimou a carga.',
+    durationMs: 60_000,
+    phases: [
+      { startMs: 0, rps: 2, narrative: 'Tráfego baixo. Manhã calma — 2 req/s.' },
+      { startMs: 20_000, rps: 8, narrative: 'Bom dia, segunda-feira. Tráfego subiu pra 8 req/s.' },
+      { startMs: 40_000, rps: 15, narrative: 'Viralizou. Tráfego dispara pra 15 req/s.' },
+    ],
+    events: [],
+    availablePieces: ['pod', 'deployment', 'service'],
+    nodeCapacity: { ram: 4, cpu: 2 },
+    nextSceneId: null,
+    showLabels: true,
+    failBelowUptime: 85,
   },
 };
 
@@ -275,6 +302,6 @@ export const LEVELS: Level[] = [
   {
     id: 'tutorial',
     name: 'Tutorial',
-    scenes: ['cena-1', 'cena-2', 'cena-3', 'cena-4', 'cena-5', 'cena-6', 'cena-7', 'cena-8'],
+    scenes: ['cena-1', 'cena-2', 'cena-3', 'cena-4', 'cena-5', 'cena-6', 'cena-7', 'cena-8', 'cena-9'],
   },
 ];

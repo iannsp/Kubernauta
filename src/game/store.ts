@@ -57,6 +57,8 @@ function freshState(scenarioId: string): GameState {
     particles: [],
     nextRequestAt: 0,
     metrics: { totalReqs: 0, successReqs: 0, failedReqs: 0 },
+    recentReqs: [],
+    consecutiveLowUptimeSince: null,
     narrativeLog: [],
     lastPhaseLogged: -1,
     firedEvents: [],
@@ -104,11 +106,17 @@ export const useGame = create<GameState & Actions>((set, get) => ({
     });
   },
 
-  removeDesired: (id) => set((s) => ({
-    ...s,
-    desired: s.desired.filter((r) => r.id !== id),
-    pods: s.pods.filter((p) => p.desiredId !== id),
-  })),
+  removeDesired: (id) => set((s) => {
+    const remainingPods = s.pods.filter((p) => p.desiredId !== id);
+    const stickyStillValid =
+      s.stickyTargetPodId !== null && remainingPods.some((p) => p.id === s.stickyTargetPodId);
+    return {
+      ...s,
+      desired: s.desired.filter((r) => r.id !== id),
+      pods: remainingPods,
+      stickyTargetPodId: stickyStillValid ? s.stickyTargetPodId : null,
+    };
+  }),
 
   setReplicas: (deploymentId, replicas) => set((s) => ({
     ...s,
@@ -230,6 +238,21 @@ export const useGame = create<GameState & Actions>((set, get) => ({
         next = { ...next, consecutiveDownSince: null };
       }
 
+      const recent = next.recentReqs ?? [];
+      if (scene.failBelowUptime !== undefined && warmupOver && recent.length >= 5) {
+        const okCount = recent.filter((r) => r.ok).length;
+        const recentUptime = (okCount / recent.length) * 100;
+        if (recentUptime < scene.failBelowUptime) {
+          if (next.consecutiveLowUptimeSince === null) {
+            next = { ...next, consecutiveLowUptimeSince: now };
+          } else if (now - next.consecutiveLowUptimeSince >= GRACE_DOWN_MS) {
+            next = { ...next, sceneStatus: 'failed' };
+          }
+        } else if (next.consecutiveLowUptimeSince !== null) {
+          next = { ...next, consecutiveLowUptimeSince: null };
+        }
+      }
+
       if (next.sceneStatus === 'running' && elapsed >= scene.durationMs) {
         next = { ...next, sceneStatus: 'survived' };
       }
@@ -246,7 +269,9 @@ export const useGame = create<GameState & Actions>((set, get) => ({
       countdownStartedAt: Date.now(),
       nextRequestAt: Date.now(),
       consecutiveDownSince: null,
+      consecutiveLowUptimeSince: null,
       metrics: { totalReqs: 0, successReqs: 0, failedReqs: 0 },
+      recentReqs: [],
       particles: [],
       narrativeLog: [scenes[s.scenarioId].introNarrative],
       lastPhaseLogged: -1,

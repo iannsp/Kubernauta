@@ -12,6 +12,7 @@ export default function Hud() {
   const sceneStatus = useGame((s) => s.sceneStatus);
   const scenarioId = useGame((s) => s.scenarioId);
   const metrics = useGame((s) => s.metrics);
+  const recentReqs = useGame((s) => s.recentReqs);
   const standalonePodsDeclared = useGame((s) => s.standalonePodsDeclared);
   const selectScene = useGame((s) => s.selectScene);
   const scene = scenes[scenarioId];
@@ -26,8 +27,9 @@ export default function Hud() {
 
   const elapsed = sceneStartedAt ? now - sceneStartedAt : 0;
   const remaining = Math.max(0, scene.durationMs - elapsed);
+  const recentOk = recentReqs.filter((r) => r.ok).length;
   const uptime =
-    metrics.totalReqs > 0 ? Math.round((metrics.successReqs / metrics.totalReqs) * 100) : 100;
+    recentReqs.length > 0 ? Math.round((recentOk / recentReqs.length) * 100) : 100;
 
   return (
     <div className="hud">
@@ -77,10 +79,10 @@ export default function Hud() {
         <span className="hud-label">tempo</span>
         <span className="hud-value mono">{formatTime(remaining)}</span>
       </div>
-      <div className="hud-cell">
-        <span className="hud-label">requisições atendidas</span>
-        <span className={`hud-value mono ${uptime < 80 ? 'warn' : ''}`}>
-          {uptime}% ({metrics.successReqs}/{metrics.totalReqs})
+      <div className="hud-cell" title={`recente: ${recentOk}/${recentReqs.length} nas últimas 10s · total: ${metrics.successReqs}/${metrics.totalReqs}`}>
+        <span className="hud-label">uptime (10s)</span>
+        <span className={`hud-value mono ${uptime < 85 ? 'warn' : ''}`}>
+          {uptime}%
         </span>
       </div>
       {standalonePodsDeclared > 0 && (

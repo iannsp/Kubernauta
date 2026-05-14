@@ -4,6 +4,7 @@ import type { Scene } from './scenarios';
 export const POD_CAPACITY = 5;
 const MAX_REQ_PER_TICK = 20;
 const PARTICLE_TTL_MS = 800;
+export const RECENT_WINDOW_MS = 10_000;
 
 function currentRps(scene: Scene, elapsedMs: number): number {
   let rps = 0;
@@ -24,6 +25,7 @@ export function processTraffic(state: GameState, scene: Scene, now: number): Gam
   let pods = state.pods.map((p) => ({ ...p, hitTimes: p.hitTimes.filter((t) => now - t < 1000) }));
   let particles = state.particles.filter((p) => now - p.bornAt < PARTICLE_TTL_MS);
   let metrics = { ...state.metrics };
+  let recentReqs = (state.recentReqs ?? []).filter((r) => now - r.at < RECENT_WINDOW_MS);
   let nextAt = state.nextRequestAt;
   let stickyId = state.stickyTargetPodId;
 
@@ -62,6 +64,7 @@ export function processTraffic(state: GameState, scene: Scene, now: number): Gam
       if (!target) {
         metrics.totalReqs++;
         metrics.failedReqs++;
+        recentReqs = [...recentReqs, { at: nextAt, ok: false }];
         particles = [
           ...particles,
           { id: newParticleId(), status: 'failed', targetPodId: null, bornAt: nextAt },
@@ -69,6 +72,7 @@ export function processTraffic(state: GameState, scene: Scene, now: number): Gam
       } else if (target.hitTimes.length >= POD_CAPACITY) {
         metrics.totalReqs++;
         metrics.failedReqs++;
+        recentReqs = [...recentReqs, { at: nextAt, ok: false }];
         particles = [
           ...particles,
           { id: newParticleId(), status: 'failed', targetPodId: target.id, bornAt: nextAt },
@@ -76,6 +80,7 @@ export function processTraffic(state: GameState, scene: Scene, now: number): Gam
       } else {
         metrics.totalReqs++;
         metrics.successReqs++;
+        recentReqs = [...recentReqs, { at: nextAt, ok: true }];
         pods = pods.map((p) =>
           p.id === target!.id ? { ...p, hitTimes: [...p.hitTimes, nextAt] } : p
         );
@@ -90,5 +95,5 @@ export function processTraffic(state: GameState, scene: Scene, now: number): Gam
     nextAt = now;
   }
 
-  return { ...state, pods, particles, nextRequestAt: nextAt, metrics, stickyTargetPodId: stickyId };
+  return { ...state, pods, particles, nextRequestAt: nextAt, metrics, recentReqs, stickyTargetPodId: stickyId };
 }
